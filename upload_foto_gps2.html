@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fondo Oplà · Carica foto & posizione GPS</title>
+
+https://fonts.gstatic.com
+https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
+
+<style>
+  :root{
+    --brand:#115ea3; --brand-2:#0d4a82; --ok:#1a7f37; --err:#b00020; --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --ring:#93c5fd;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b1220; --card:#111827; --muted:#9aa3b2; --ring:#1d4ed8; color-scheme: dark; }
+    body{ color:#e5e7eb }
+  }
+  *{ box-sizing:border-box }
+  html,body{ height:100%; background:var(--bg); font-family:'Inter', system-ui, Arial, sans-serif; }
+  .wrap{ max-width:780px; margin:28px auto; padding:0 16px }
+  .card{
+    background:var(--card); border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.08);
+    padding:28px; border:1px solid rgba(17,24,39,.06)
+  }
+  header{ display:flex; align-items:center; gap:14px; margin-bottom:10px }
+  header img{ height:38px }
+  h1{ font-size:22px; margin:0 }
+  p.lead{ color:var(--muted); margin:4px 0 14px; line-height:1.45 }
+  label{ display:block; font-weight:600; margin-top:18px }
+  input[type="text"], input[type="number"]{
+    width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff; outline:none;
+  }
+  input:focus{ border-color:var(--ring); box-shadow:0 0 0 3px color-mix(in oklab, var(--ring) 40%, transparent) }
+  .filebox{ border:2px dashed #c7d2fe; background:#eef2ff; border-radius:12px; padding:18px; text-align:center; margin-top:10px }
+  .filebox input{ display:block; margin:8px auto }
+  #preview{ margin-top:12px; max-width:100%; border-radius:10px; border:1px solid #e5e7eb }
+  .kpi{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; color:var(--muted); font-size:13px }
+  .kpi span{ background:rgba(17,94,163,.08); padding:6px 8px; border-radius:999px }
+  .actions{ margin-top:18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  button{
+    background:var(--brand); color:#fff; border:0; padding:12px 18px; border-radius:10px; font-weight:600; cursor:pointer
+  }
+  button:hover{ background:var(--brand-2) }
+  button:disabled{ background:#9aa3b2; cursor:not-allowed }
+  .hint{ color:var(--muted); font-size:14px }
+  .status{ margin-top:12px; font-size:14px }
+  .ok{ color:var(--ok) } .err{ color:var(--err) }
+  .divider{ height:1px; background:rgba(17,24,39,.08); margin:18px 0 }
+  footer{ margin-top:20px; color:var(--muted); font-size:13px; text-align:center }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="card" role="main" aria-labelledby="titolo">
+    <header>
+      LOGO_URL
+      <h1 id="titolo">Carica foto & posizione GPS</h1>
+    </header>
+
+    <p class="lead">
+      Scatta o seleziona una foto dell’intervento. Se possibile, consenti il GPS per registrare la posizione.
+      Dopo l’invio verrai <b>reindirizzato automaticamente al modulo</b>.
+    </p>
+
+    <div id="idRow">
+      <label for="proposalId">ID proposta</label>
+      <input type="number" id="proposalId" placeholder="es. 123" inputmode="numeric" />
+      <p class="hint">Se stai tornando dal modulo, l’ID è nel messaggio di conferma / email di ricevuta.</p>
+    </div>
+
+    <label for="photo">Foto</label>
+    <div class="filebox">
+      <input type="file" id="photo" accept="image/*" capture="environment" aria-describedby="helpfoto" />
+      <img id="preview" alt="Anteprima foto" />
+      <p id="helpfoto" class="hint">Formati: JPG/PNG/HEIC (consigliato &lt; 10 MB). Puoi scattare ora o selezionare dalla galleria.</p>
+    </div>
+
+    <div class="kpi">
+      <span id="gpsText">GPS: in acquisizione…</span>
+      <span id="imgInfo" style="display:none"></span>
+    </div>
+
+    <div class="actions">
+      <button id="sendBtn" onclick="sendData()">Invia foto</button>
+      <button type="button" onclick="window.history.back()" style="background:#6b7280">Annulla</button>
+    </div>
+
+    <div id="msg" class="status" aria-live="polite"></div>
+    <div class="divider"></div>
+    <footer>Fondo Oplà – Autolinee Toscane • La posizione è usata solo per georeferenziare la proposta.</footer>
+  </div>
+</div>
+
+<script>
+/* ========= CONFIG ========= */
+const FLOW_URL = "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";  // ← il tuo trigger (ATTENZIONE: & non &amp;)
+const DEFAULT_FORM = "https://forms.office.com/";  // ← URL del tuo Form o pagina “Grazie”
+const MAX_W = 1800, MAX_H = 1800;
+/* ========================= */
+
+// query param
+const qp = new URLSearchParams(location.search);
+const presetId  = qp.get("proposalId");
+const returnUrl = qp.get("returnUrl") || DEFAULT_FORM;
+if (presetId) {
+  const el = document.getElementById('proposalId');
+  el.value = presetId;
+  document.getElementById('idRow').style.display = 'none';
+}
+
+// anteprima foto & info
+document.getElementById('photo').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  const prev = document.getElementById('preview');
+  const info = document.getElementById('imgInfo');
+  if(!f){ prev.src=""; info.style.display='none'; return; }
+  prev.src = URL.createObjectURL(f);
+  info.textContent = `Immagine: ${f.type || 'sconosciuto'} • ${(f.size/1024/1024).toFixed(2)} MB`;
+  info.style.display = 'inline-block';
+});
+
+// GPS
+let gps = { lat:null, lon:null };
+document.addEventListener('DOMContentLoaded', ()=>{
+  const txt = document.getElementById('gpsText');
+  if (!navigator.geolocation){ txt.textContent="GPS non disponibile"; return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => { gps.lat=pos.coords.latitude; gps.lon=pos.coords.longitude; txt.textContent=`GPS: ${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}`; },
+    _err => { txt.textContent="GPS non attivo (puoi procedere anche senza)"; },
+    { enableHighAccuracy:true, timeout:8000, maximumAge:0 }
+  );
+});
+
+// utilità
+function fitWithin(w,h,MW,MH){ const r=Math.min(MW/w, MH/h, 1); return { w:Math.round(w*r), h:Math.round(h*r) }; }
+function loadImage(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=fr.result; };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve((r.result||"").toString().split(",")[1]||"");
+    r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+async function fileToBase64Optimized(file){
+  const canCanvas = /^image\/(png|jpe?g|webp)$/i.test(file.type);
+  if(!canCanvas) return await fileToBase64(file);
+  const img=await loadImage(file);
+  const {w,h}=fitWithin(img.width,img.height,MAX_W,MAX_H);
+  const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+  const mime = file.type.includes('png') ? 'image/png' : 'image/jpeg';
+  const dataUrl = canvas.toDataURL(mime, 0.85);
+  return dataUrl.split(',')[1];
+}
+
+// invio
+async function sendData(){
+  const msg=document.getElementById('msg');
+  const btn=document.getElementById('sendBtn');
+  msg.className='status'; msg.textContent='';
+  const id=(presetId || document.getElementById('proposalId').value.trim());
+  const file=document.getElementById('photo').files[0];
+
+  if(!id){ msg.className='status err'; msg.textContent='Inserisci l’ID proposta.'; return; }
+  if(!file){ msg.className='status err'; msg.textContent='Seleziona o scatta una foto.'; return; }
+
+  btn.disabled=true; msg.textContent='Invio in corso…';
+
+  try{
+    const base64 = await fileToBase64Optimized(file);
+    const payload = {
+      proposalId: id,
+      latitude: gps.lat,
+      longitude: gps.lon,
+      filename: file.name || 'foto.jpg',
+      filecontent: base64
+    };
+
+    const res = await fetch(FLOW_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if(!res.ok){
+      const t = await res.text().catch(()=> "");
+      throw new Error(`Errore HTTP ${res.status}${t ? (': '+t) : ''}`);
+    }
+
+    msg.className='status ok'; msg.textContent='Foto inviata. Reindirizzamento…';
+    setTimeout(()=> location.href = returnUrl, 1200);
+
+  }catch(e){
+    console.error(e);
+    msg.className='status err'; msg.textContent = e.message || 'Invio non riuscito.';
+    btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
