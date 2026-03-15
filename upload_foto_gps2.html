@@ -58,7 +58,8 @@
    CONFIG
 ========================= */
 const CONFIG = {
-  FLOW_URL: 'YOUR_FLOW_URL',         // <<< SOSTITUISCI con URL trigger HTTP (POST anonimo)
+  // <<< URL del trigger HTTP (POST anonimo) — versione con & corretti, NON &amp;
+  FLOW_URL: 'https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds',
   MAX_MB: 15,
   AUTO_REDIRECT_MS: 1000
 };
@@ -134,11 +135,6 @@ async function extractGpsFromExif(file){
    UPLOAD
 ========================= */
 async function performUpload(file, position, noteIfNoGps){
-  if(!CONFIG.FLOW_URL || CONFIG.FLOW_URL === 'YOUR_FLOW_URL'){
-    setStatus('Configura FLOW_URL nel codice.', 'err');
-    return;
-  }
-
   const fd = new FormData();
   fd.append('file', file, file.name || 'photo.jpg');
 
