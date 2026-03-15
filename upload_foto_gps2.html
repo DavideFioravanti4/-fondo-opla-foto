@@ -1,208 +1,340 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fondo Oplà · Carica foto & posizione GPS</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Carica foto con GPS • Progetto Oplà</title>
 
-https://fonts.gstatic.com
-https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap
-
-<style>
-  :root{
-    --brand:#115ea3; --brand-2:#0d4a82; --ok:#1a7f37; --err:#b00020; --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --ring:#93c5fd;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#0b1220; --card:#111827; --muted:#9aa3b2; --ring:#1d4ed8; color-scheme: dark; }
-    body{ color:#e5e7eb }
-  }
-  *{ box-sizing:border-box }
-  html,body{ height:100%; background:var(--bg); font-family:'Inter', system-ui, Arial, sans-serif; }
-  .wrap{ max-width:780px; margin:28px auto; padding:0 16px }
-  .card{
-    background:var(--card); border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.08);
-    padding:28px; border:1px solid rgba(17,24,39,.06)
-  }
-  header{ display:flex; align-items:center; gap:14px; margin-bottom:10px }
-  header img{ height:38px }
-  h1{ font-size:22px; margin:0 }
-  p.lead{ color:var(--muted); margin:4px 0 14px; line-height:1.45 }
-  label{ display:block; font-weight:600; margin-top:18px }
-  input[type="text"], input[type="number"]{
-    width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; font-size:16px; background:#fff; outline:none;
-  }
-  input:focus{ border-color:var(--ring); box-shadow:0 0 0 3px color-mix(in oklab, var(--ring) 40%, transparent) }
-  .filebox{ border:2px dashed #c7d2fe; background:#eef2ff; border-radius:12px; padding:18px; text-align:center; margin-top:10px }
-  .filebox input{ display:block; margin:8px auto }
-  #preview{ margin-top:12px; max-width:100%; border-radius:10px; border:1px solid #e5e7eb }
-  .kpi{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; color:var(--muted); font-size:13px }
-  .kpi span{ background:rgba(17,94,163,.08); padding:6px 8px; border-radius:999px }
-  .actions{ margin-top:18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  button{
-    background:var(--brand); color:#fff; border:0; padding:12px 18px; border-radius:10px; font-weight:600; cursor:pointer
-  }
-  button:hover{ background:var(--brand-2) }
-  button:disabled{ background:#9aa3b2; cursor:not-allowed }
-  .hint{ color:var(--muted); font-size:14px }
-  .status{ margin-top:12px; font-size:14px }
-  .ok{ color:var(--ok) } .err{ color:var(--err) }
-  .divider{ height:1px; background:rgba(17,24,39,.08); margin:18px 0 }
-  footer{ margin-top:20px; color:var(--muted); font-size:13px; text-align:center }
-</style>
+  <style>
+    :root { --brand:#0b84f3; --ok:#1aa36f; --err:#d64545; --muted:#6b7280; }
+    html,body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { background:#f7fafc; color:#111; }
+    header { background: linear-gradient(90deg, var(--brand), #6bb6ff); color:white; padding:18px 16px; }
+    header h1 { margin:0; font-size:18px; }
+    header p { margin:6px 0 0 0; font-size:13px; opacity:.9; }
+    main { max-width:920px; margin: 18px auto 48px; background:white; border:1px solid #e5e7eb; border-radius:10px; padding:16px; }
+    fieldset { border:1px solid #e5e7eb; border-radius:8px; margin:0 0 16px 0; }
+    legend { color:#111; font-weight:600; padding:0 8px; }
+    .row { display:flex; flex-wrap:wrap; gap:12px; }
+    .col { flex:1 1 240px; min-width:220px; }
+    label { font-size:13px; color:#111; display:block; margin-bottom:6px; }
+    input[type="text"]{ width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
+    input[type="file"]{ width:100%; }
+    .help { color: var(--muted); font-size:12px; margin-top:6px; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px; }
+    .pill.ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
+    .pill.warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
+    .pill.err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
+    button { background:var(--brand); color:white; border:none; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; }
+    button[disabled]{ opacity:.6; cursor:not-allowed; }
+    .ghost { background:transparent; color:var(--brand); border:1px solid #b5d7ff; }
+    .row-buttons { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .preview { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:10px; }
+    .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .center { text-align:center; }
+    .mt8{ margin-top:8px; } .mt12{ margin-top:12px; } .mt16{ margin-top:16px; }
+    .status { margin-top:10px; }
+    .footer { color:#6b7280; font-size:12px; text-align:center; margin:18px 0 0; }
+  </style>
 </head>
-
 <body>
-<div class="wrap">
-  <div class="card" role="main" aria-labelledby="titolo">
-    <header>
-      LOGO_URL
-      <h1 id="titolo">Carica foto & posizione GPS</h1>
-    </header>
+  <header>
+    <h1>Carica foto con posizione</h1>
+    <p>Progetto Oplà • Upload foto con coordinate GPS e integrazione Flow</p>
+  </header>
 
-    <p class="lead">
-      Scatta o seleziona una foto dell’intervento. Se possibile, consenti il GPS per registrare la posizione.
-      Dopo l’invio verrai <b>reindirizzato automaticamente al modulo</b>.
-    </p>
+  <main>
+    <!-- INFO PARAMETRI -->
+    <div id="paramsPanel" class="mt8"></div>
 
-    <div id="idRow">
-      <label for="proposalId">ID proposta</label>
-      <input type="number" id="proposalId" placeholder="es. 123" inputmode="numeric" />
-      <p class="hint">Se stai tornando dal modulo, l’ID è nel messaggio di conferma / email di ricevuta.</p>
-    </div>
+    <!-- STATO GEO -->
+    <div id="geoStatus" class="mt12"></div>
 
-    <label for="photo">Foto</label>
-    <div class="filebox">
-      <input type="file" id="photo" accept="image/*" capture="environment" aria-describedby="helpfoto" />
-      <img id="preview" alt="Anteprima foto" />
-      <p id="helpfoto" class="hint">Formati: JPG/PNG/HEIC (consigliato &lt; 10 MB). Puoi scattare ora o selezionare dalla galleria.</p>
-    </div>
+    <!-- FORM -->
+    <fieldset class="mt16">
+      <legend>Selezione foto</legend>
+      <div class="row">
+        <div class="col">
+          <label for="photo">Foto (max 15MB)</label>
+          <input id="photo" type="file" accept="image/*;capture=camera" />
+          <div class="help">Puoi scattare una foto ora o scegliere dalla galleria.</div>
+        </div>
+        <div class="col">
+          <label for="uploadCode">Codice foto (opzionale)</label>
+          <input id="uploadCode" type="text" placeholder="es. ABCD-1234" />
+          <div class="help">Se già assegnato dal sistema principale.</div>
+        </div>
+      </div>
 
-    <div class="kpi">
-      <span id="gpsText">GPS: in acquisizione…</span>
-      <span id="imgInfo" style="display:none"></span>
-    </div>
+      <div class="row mt12">
+        <div class="col">
+          <label for="proposalId">proposalId (opzionale)</label>
+          <input id="proposalId" type="text" placeholder="ID della riga esistente" />
+          <div class="help">Se presente, la foto viene allegata alla riga e le coordinate vengono aggiornate.</div>
+        </div>
+        <div class="col">
+          <label for="note">Note (opzionale)</label>
+          <input id="note" type="text" placeholder="breve descrizione" />
+        </div>
+      </div>
 
-    <div class="actions">
-      <button id="sendBtn" onclick="sendData()">Invia foto</button>
-      <button type="button" onclick="window.history.back()" style="background:#6b7280">Annulla</button>
-    </div>
+      <div class="row-buttons">
+        <button id="btnGeo">📍 Ottieni posizione</button>
+        <button id="btnClearGeo" class="ghost">Cancella posizione</button>
+      </div>
 
-    <div id="msg" class="status" aria-live="polite"></div>
-    <div class="divider"></div>
-    <footer>Fondo Oplà – Autolinee Toscane • La posizione è usata solo per georeferenziare la proposta.</footer>
-  </div>
-</div>
+      <div id="coords" class="mt8 mono"></div>
+
+      <div class="row-buttons mt12">
+        <button id="btnUpload">⬆️ Carica foto</button>
+        <button id="btnReset" class="ghost">Reset</button>
+        <a id="btnietro</a>
+      </div>
+
+      <div id="status" class="status"></div>
+    </fieldset>
+
+    <!-- PREVIEW -->
+    <div id="preview" class="preview"></div>
+
+    <div class="footer">v1.0 • Pagina statica GitHub Pages</div>
+  </main>
 
 <script>
-/* ========= CONFIG ========= */
-const FLOW_URL = "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";  // ← il tuo trigger (ATTENZIONE: & non &amp;)
-const DEFAULT_FORM = "https://forms.office.com/";  // ← URL del tuo Form o pagina “Grazie”
-const MAX_W = 1800, MAX_H = 1800;
-/* ========================= */
+/* =========================
+   CONFIG
+========================= */
+const CONFIG = {
+  FLOW_URL: 'YOUR_FLOW_URL', // <<<<<< SOSTITUISCI con l’URL del trigger HTTP del Flow (POST)
+  MAX_SIZE_MB: 15,
+  DEFAULT_FORM: 'upload_foto_gps2.html' // usato solo per comporre returnUrl se manca
+};
 
-// query param
-const qp = new URLSearchParams(location.search);
-const presetId  = qp.get("proposalId");
-const returnUrl = qp.get("returnUrl") || DEFAULT_FORM;
-if (presetId) {
-  const el = document.getElementById('proposalId');
-  el.value = presetId;
-  document.getElementById('idRow').style.display = 'none';
-}
+/* =========================
+   UTILITY
+========================= */
+const $ = (id) => document.getElementById(id);
+const getParams = () => Object.fromEntries(new URLSearchParams(location.search).entries());
+const formatCoord = (p) => p ? `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)} (±${p.accuracy}m)` : '—';
+const bytesToMB = (b) => (b/1024/1024);
 
-// anteprima foto & info
-document.getElementById('photo').addEventListener('change', e=>{
-  const f = e.target.files[0];
-  const prev = document.getElementById('preview');
-  const info = document.getElementById('imgInfo');
-  if(!f){ prev.src=""; info.style.display='none'; return; }
-  prev.src = URL.createObjectURL(f);
-  info.textContent = `Immagine: ${f.type || 'sconosciuto'} • ${(f.size/1024/1024).toFixed(2)} MB`;
-  info.style.display = 'inline-block';
-});
+/* =========================
+   STATO
+========================= */
+let state = {
+  position: null,
+  returnUrl: null,
+  params: {}
+};
 
-// GPS
-let gps = { lat:null, lon:null };
-document.addEventListener('DOMContentLoaded', ()=>{
-  const txt = document.getElementById('gpsText');
-  if (!navigator.geolocation){ txt.textContent="GPS non disponibile"; return; }
+/* =========================
+   INIT
+========================= */
+(function init(){
+  state.params = getParams();
+
+  // Precompila dai querystring
+  if(state.params.proposalId) $('proposalId').value = state.params.proposalId;
+  if(state.params.uploadCode) $('uploadCode').value = state.params.uploadCode;
+  if(state.params.note) $('note').value = state.params.note;
+
+  // returnUrl
+  if (state.params.returnUrl) {
+    state.returnUrl = state.params.returnUrl;
+  } else {
+    // fallback: torna alla root del repo pages
+    const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+    state.returnUrl = base + CONFIG.DEFAULT_FORM;
+  }
+
+  // Pannello parametri
+  $('paramsPanel').innerHTML = `
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <span class="pill ${state.params.proposalId ? 'ok' : 'warn'}">
+            <strong>proposalId:</strong> ${state.params.proposalId || 'non impostato'}
+          </span>
+        </div>
+        <div class="col">
+          <span class="pill ${state.params.uploadCode ? 'ok' : 'warn'}">
+            <strong>uploadCode:</strong> ${state.params.uploadCode || 'non impostato'}
+          </span>
+        </div>
+        <div class="col">
+          <span class="pill ok"><strong>returnUrl:</strong> impostato</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Tasto back
+  const back = $('btnBack');
+  back.href = state.returnUrl;
+  back.style.display = 'inline-flex';
+
+  // Eventi
+  $('btnGeo').addEventListener('click', onGetGeo);
+  $('btnClearGeo').addEventListener('click', clearGeo);
+  $('btnUpload').addEventListener('click', onUpload);
+  $('btnReset').addEventListener('click', resetForm);
+  $('photo').addEventListener('change', onPhotoPicked);
+})();
+
+/* =========================
+   GEO
+========================= */
+function onGetGeo(e){
+  e.preventDefault();
+  $('geoStatus').innerHTML = `<span class="pill warn">Richiesta posizione… consenti il permesso nel browser.</span>`;
   navigator.geolocation.getCurrentPosition(
-    pos => { gps.lat=pos.coords.latitude; gps.lon=pos.coords.longitude; txt.textContent=`GPS: ${gps.lat.toFixed(5)}, ${gps.lon.toFixed(5)}`; },
-    _err => { txt.textContent="GPS non attivo (puoi procedere anche senza)"; },
-    { enableHighAccuracy:true, timeout:8000, maximumAge:0 }
+    (pos)=>{
+      const { latitude, longitude, accuracy, altitude, heading, speed } = pos.coords;
+      state.position = { latitude, longitude, accuracy, altitude, heading, speed, timestamp: pos.timestamp };
+      $('coords').textContent = `Lat,Lng: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} • Acc: ±${accuracy}m`;
+      $('geoStatus').innerHTML = `<span class="pill ok">Posizione acquisita.</span>`;
+    },
+    (err)=>{
+      $('geoStatus').innerHTML = `<span class="pill err">Geo errore: ${err.message}</span>`;
+    },
+    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
   );
-});
-
-// utilità
-function fitWithin(w,h,MW,MH){ const r=Math.min(MW/w, MH/h, 1); return { w:Math.round(w*r), h:Math.round(h*r) }; }
-function loadImage(file){
-  return new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload=()=>{ const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=fr.result; };
-    fr.onerror=reject; fr.readAsDataURL(file);
-  });
 }
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>resolve((r.result||"").toString().split(",")[1]||"");
-    r.onerror=reject; r.readAsDataURL(file);
-  });
-}
-async function fileToBase64Optimized(file){
-  const canCanvas = /^image\/(png|jpe?g|webp)$/i.test(file.type);
-  if(!canCanvas) return await fileToBase64(file);
-  const img=await loadImage(file);
-  const {w,h}=fitWithin(img.width,img.height,MAX_W,MAX_H);
-  const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-  const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-  const mime = file.type.includes('png') ? 'image/png' : 'image/jpeg';
-  const dataUrl = canvas.toDataURL(mime, 0.85);
-  return dataUrl.split(',')[1];
+function clearGeo(e){
+  e.preventDefault();
+  state.position = null;
+  $('coords').textContent = '—';
+  $('geoStatus').innerHTML = `<span class="pill warn">Posizione cancellata.</span>`;
 }
 
-// invio
-async function sendData(){
-  const msg=document.getElementById('msg');
-  const btn=document.getElementById('sendBtn');
-  msg.className='status'; msg.textContent='';
-  const id=(presetId || document.getElementById('proposalId').value.trim());
-  const file=document.getElementById('photo').files[0];
+/* =========================
+   PREVIEW
+========================= */
+function onPhotoPicked(){
+  const file = $('photo').files[0];
+  const prev = $('preview');
+  prev.innerHTML = '';
+  if(!file) return;
+  if(bytesToMB(file.size) > CONFIG.MAX_SIZE_MB){
+    setStatus('La foto supera i ' + CONFIG.MAX_SIZE_MB + ' MB', 'err');
+    $('photo').value = '';
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  img.style.maxWidth = '100%';
+  img.onload = ()=> URL.revokeObjectURL(url);
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.appendChild(img);
+  prev.appendChild(card);
+}
 
-  if(!id){ msg.className='status err'; msg.textContent='Inserisci l’ID proposta.'; return; }
-  if(!file){ msg.className='status err'; msg.textContent='Seleziona o scatta una foto.'; return; }
+/* =========================
+   UPLOAD
+========================= */
+async function onUpload(e){
+  e.preventDefault();
+  clearStatus();
 
-  btn.disabled=true; msg.textContent='Invio in corso…';
+  const file = $('photo').files[0];
+  if(!file) return setStatus('Seleziona una foto prima di caricare.', 'err');
+
+  if(bytesToMB(file.size) > CONFIG.MAX_SIZE_MB){
+    return setStatus(`La foto supera i ${CONFIG.MAX_SIZE_MB} MB.`, 'err');
+  }
+
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+
+  // dati comuni
+  const payload = {
+    // se c'è proposalId → ramo "allega e aggiorna GPS"
+    // se NON c'è → ramo "salva in UploadTemp"
+    proposalId: $('proposalId').value?.trim() || null,
+    uploadCode: $('uploadCode').value?.trim() || null,
+    note: $('note').value?.trim() || null,
+    position: state.position ? {
+      latitude: state.position.latitude,
+      longitude: state.position.longitude,
+      accuracy: state.position.accuracy,
+      altitude: state.position.altitude ?? null,
+      heading: state.position.heading ?? null,
+      speed: state.position.speed ?? null,
+      timestamp: state.position.timestamp ?? Date.now()
+    } : null
+  };
+  fd.append('metadata', new Blob([JSON.stringify(payload)], {type:'application/json'}));
+
+  // UI
+  toggleBusy(true);
+  setStatus('Caricamento in corso…', 'warn');
 
   try{
-    const base64 = await fileToBase64Optimized(file);
-    const payload = {
-      proposalId: id,
-      latitude: gps.lat,
-      longitude: gps.lon,
-      filename: file.name || 'foto.jpg',
-      filecontent: base64
-    };
-
-    const res = await fetch(FLOW_URL, {
+    const res = await fetch(CONFIG.FLOW_URL, {
       method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(payload)
+      mode: 'cors',
+      headers: { /* niente Content-Type: FormData lo imposta da sé */ },
+      body: fd
     });
 
     if(!res.ok){
-      const t = await res.text().catch(()=> "");
-      throw new Error(`Errore HTTP ${res.status}${t ? (': '+t) : ''}`);
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status} – ${text}`);
     }
 
-    msg.className='status ok'; msg.textContent='Foto inviata. Reindirizzamento…';
-    setTimeout(()=> location.href = returnUrl, 1200);
+    const data = await res.json().catch(()=> ({}));
 
-  }catch(e){
-    console.error(e);
-    msg.className='status err'; msg.textContent = e.message || 'Invio non riuscito.';
-    btn.disabled=false;
+    // Atteso: { ok: true, branch:'temp'|'attach', guid?:'...', message?:'...' }
+    let msg = '';
+    if (data.branch === 'temp') {
+      msg = `Foto salvata in area temporanea. Codice/Guid: <span class="mono">${data.guid || data.uploadCode || '(non ricevuto)'}</span>`;
+      setStatus(msg, 'ok');
+      // se non c’era già uploadCode, mostra quello restituito
+      if(!$('uploadCode').value && data.guid){
+        $('uploadCode').value = data.guid;
+      }
+    } else if (data.branch === 'attach') {
+      msg = `Foto allegata alla riga <span class="mono">${payload.proposalId}</span> e coordinate aggiornate.`;
+      setStatus(msg, 'ok');
+    } else {
+      setStatus(data.message || 'Caricamento completato.', 'ok');
+    }
+
+  } catch(err){
+    console.error(err);
+    setStatus(`Errore durante l’upload: ${err.message}`, 'err');
+  } finally {
+    toggleBusy(false);
   }
+}
+
+/* =========================
+   UI Helpers
+========================= */
+function setStatus(msg, type='ok'){
+  const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
+  $('status').innerHTML = `<div class="${cls}">${msg}</div>`;
+}
+function clearStatus(){ $('status').innerHTML = ''; }
+function toggleBusy(busy){
+  $('btnUpload').disabled = busy;
+  $('btnGeo').disabled = busy;
+  $('btnClearGeo').disabled = busy;
+  $('btnReset').disabled = busy;
+}
+function resetForm(e){
+  if(e) e.preventDefault();
+  $('photo').value = '';
+  $('uploadCode').value = state.params.uploadCode || '';
+  $('proposalId').value = state.params.proposalId || '';
+  $('note').value = state.params.note || '';
+  $('preview').innerHTML = '';
+  clearGeo(e);
+  clearStatus();
 }
 </script>
 </body>
