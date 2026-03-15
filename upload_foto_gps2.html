@@ -1,341 +1,227 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="light dark" />
-  <title>Carica foto con GPS • Progetto Oplà</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Upload foto • GPS opzionale</title>
+  <meta name="color-scheme" content="light dark"/>
+
+  <!-- Lettura EXIF (per provare a recuperare GPS dalla foto) -->
+  https://unpkg.com/exifr@7.1.3/dist/exifr.min.js</script>
 
   <style>
-    :root { --brand:#0b84f3; --ok:#1aa36f; --err:#d64545; --muted:#6b7280; }
-    html,body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    body { background:#f7fafc; color:#111; }
-    header { background: linear-gradient(90deg, var(--brand), #6bb6ff); color:white; padding:18px 16px; }
-    header h1 { margin:0; font-size:18px; }
-    header p { margin:6px 0 0 0; font-size:13px; opacity:.9; }
-    main { max-width:920px; margin: 18px auto 48px; background:white; border:1px solid #e5e7eb; border-radius:10px; padding:16px; }
-    fieldset { border:1px solid #e5e7eb; border-radius:8px; margin:0 0 16px 0; }
-    legend { color:#111; font-weight:600; padding:0 8px; }
-    .row { display:flex; flex-wrap:wrap; gap:12px; }
-    .col { flex:1 1 240px; min-width:220px; }
-    label { font-size:13px; color:#111; display:block; margin-bottom:6px; }
-    input[type="text"]{ width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; }
-    input[type="file"]{ width:100%; }
-    .help { color: var(--muted); font-size:12px; margin-top:6px; }
-    .pill { display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius:999px; font-size:12px; }
-    .pill.ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
-    .pill.warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
-    .pill.err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
-    button { background:var(--brand); color:white; border:none; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; }
+    :root{ --brand:#0b84f3; --ok:#1aa36f; --warn:#b7791f; --err:#d64545; --bg:#f7fafc; }
+    html,body{ margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body{ background:var(--bg); color:#111; }
+    header{ padding:16px; background:linear-gradient(90deg, var(--brand), #6bb6ff); color:#fff; }
+    header h1{ margin:0; font-size:18px; }
+    main{ max-width:680px; margin:16px auto 48px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+    .row-btn{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:6px 0 6px; }
+    button{ border:none; border-radius:12px; padding:14px 18px; font-weight:700; cursor:pointer; }
+    .primary{ background:var(--brand); color:#fff; }
+    .secondary{ background:#ffffff; color:var(--brand); border:1px solid #cfe2ff; }
     button[disabled]{ opacity:.6; cursor:not-allowed; }
-    .ghost { background:transparent; color:var(--brand); border:1px solid #b5d7ff; }
-    .row-buttons { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .preview { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-top:10px; }
-    .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .center { text-align:center; }
-    .mt8{ margin-top:8px; } .mt12{ margin-top:12px; } .mt16{ margin-top:16px; }
-    .status { margin-top:10px; }
-    .footer { color:#6b7280; font-size:12px; text-align:center; margin:18px 0 0; }
+    .status{ margin-top:10px; text-align:center; min-height:36px; }
+    .pill{ display:inline-block; padding:8px 10px; border-radius:999px; font-size:13px; }
+    .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
+    .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
+    .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
+    .preview{ margin-top:12px; display:flex; justify-content:center; }
+    .preview img{ max-width:100%; border-radius:12px; border:1px solid #e5e7eb; }
+    .footer{ text-align:center; color:#777; font-size:12px; margin-top:16px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Carica foto con posizione</h1>
-    <p>Progetto Oplà • Upload foto con coordinate GPS e integrazione Flow</p>
-  </header>
+<header>
+  <h1>Upload foto (GPS opzionale)</h1>
+</header>
 
-  <main>
-    <!-- INFO PARAMETRI -->
-    <div id="paramsPanel" class="mt8"></div>
+<main>
+  <!-- Bottoni -->
+  <div class="row-btn">
+    <button id="btnShoot" class="primary">📷 Scatta foto</button>
+    <button id="btnPick" class="secondary">🖼️ Carica foto</button>
+  </div>
 
-    <!-- STATO GEO -->
-    <div id="geoStatus" class="mt12"></div>
+  <!-- Input file (nascosti) -->
+  <input id="inputCamera" type="file" accept="image/*" capture="environment" style="display:none"/>
+  <input id="inputGallery" type="file" accept="image/*" style="display:none"/>
 
-    <!-- FORM -->
-    <fieldset class="mt16">
-      <legend>Selezione foto</legend>
-      <div class="row">
-        <div class="col">
-          <label for="photo">Foto (max 15MB)</label>
-          <input id="photo" type="file" accept="image/*;capture=camera" />
-          <div class="help">Puoi scattare una foto ora o scegliere dalla galleria.</div>
-        </div>
-        <div class="col">
-          <label for="uploadCode">Codice foto (opzionale)</label>
-          <input id="uploadCode" type="text" placeholder="es. ABCD-1234" />
-          <div class="help">Se già assegnato dal sistema principale.</div>
-        </div>
-      </div>
+  <div id="status" class="status"></div>
+  <div id="preview" class="preview"></div>
 
-      <div class="row mt12">
-        <div class="col">
-          <label for="proposalId">proposalId (opzionale)</label>
-          <input id="proposalId" type="text" placeholder="ID della riga esistente" />
-          <div class="help">Se presente, la foto viene allegata alla riga e le coordinate vengono aggiornate.</div>
-        </div>
-        <div class="col">
-          <label for="note">Note (opzionale)</label>
-          <input id="note" type="text" placeholder="breve descrizione" />
-        </div>
-      </div>
-
-      <div class="row-buttons">
-        <button id="btnGeo">📍 Ottieni posizione</button>
-        <button id="btnClearGeo" class="ghost">Cancella posizione</button>
-      </div>
-
-      <div id="coords" class="mt8 mono"></div>
-
-      <div class="row-buttons mt12">
-        <button id="btnUpload">⬆️ Carica foto</button>
-        <button id="btnReset" class="ghost">Reset</button>
-        <a id="btnietro</a>
-      </div>
-
-      <div id="status" class="status"></div>
-    </fieldset>
-
-    <!-- PREVIEW -->
-    <div id="preview" class="preview"></div>
-
-    <div class="footer">v1.0 • Pagina statica GitHub Pages</div>
-  </main>
+  <div class="footer">v2.1 • EXIF + geoloc (opzionale) • redirect automatico</div>
+</main>
 
 <script>
 /* =========================
    CONFIG
 ========================= */
 const CONFIG = {
-  FLOW_URL: 'YOUR_FLOW_URL', // <<<<<< SOSTITUISCI con l’URL del trigger HTTP del Flow (POST)
-  MAX_SIZE_MB: 15,
-  DEFAULT_FORM: 'upload_foto_gps2.html' // usato solo per comporre returnUrl se manca
+  FLOW_URL: 'YOUR_FLOW_URL',         // <<< SOSTITUISCI con URL trigger HTTP (POST anonimo)
+  MAX_MB: 15,
+  AUTO_REDIRECT_MS: 1000
 };
 
-/* =========================
-   UTILITY
-========================= */
-const $ = (id) => document.getElementById(id);
-const getParams = () => Object.fromEntries(new URLSearchParams(location.search).entries());
-const formatCoord = (p) => p ? `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)} (±${p.accuracy}m)` : '—';
-const bytesToMB = (b) => (b/1024/1024);
+const $ = id => document.getElementById(id);
+const toMB = b => (b/1024/1024).toFixed(1);
+const qs = Object.fromEntries(new URLSearchParams(location.search).entries()); // supporta ?proposalId & returnUrl
 
-/* =========================
-   STATO
-========================= */
-let state = {
-  position: null,
-  returnUrl: null,
-  params: {}
-};
-
-/* =========================
-   INIT
-========================= */
-(function init(){
-  state.params = getParams();
-
-  // Precompila dai querystring
-  if(state.params.proposalId) $('proposalId').value = state.params.proposalId;
-  if(state.params.uploadCode) $('uploadCode').value = state.params.uploadCode;
-  if(state.params.note) $('note').value = state.params.note;
-
-  // returnUrl
-  if (state.params.returnUrl) {
-    state.returnUrl = state.params.returnUrl;
-  } else {
-    // fallback: torna alla root del repo pages
-    const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-    state.returnUrl = base + CONFIG.DEFAULT_FORM;
-  }
-
-  // Pannello parametri
-  $('paramsPanel').innerHTML = `
-    <div class="card">
-      <div class="row">
-        <div class="col">
-          <span class="pill ${state.params.proposalId ? 'ok' : 'warn'}">
-            <strong>proposalId:</strong> ${state.params.proposalId || 'non impostato'}
-          </span>
-        </div>
-        <div class="col">
-          <span class="pill ${state.params.uploadCode ? 'ok' : 'warn'}">
-            <strong>uploadCode:</strong> ${state.params.uploadCode || 'non impostato'}
-          </span>
-        </div>
-        <div class="col">
-          <span class="pill ok"><strong>returnUrl:</strong> impostato</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Tasto back
-  const back = $('btnBack');
-  back.href = state.returnUrl;
-  back.style.display = 'inline-flex';
-
-  // Eventi
-  $('btnGeo').addEventListener('click', onGetGeo);
-  $('btnClearGeo').addEventListener('click', clearGeo);
-  $('btnUpload').addEventListener('click', onUpload);
-  $('btnReset').addEventListener('click', resetForm);
-  $('photo').addEventListener('change', onPhotoPicked);
-})();
-
-/* =========================
-   GEO
-========================= */
-function onGetGeo(e){
-  e.preventDefault();
-  $('geoStatus').innerHTML = `<span class="pill warn">Richiesta posizione… consenti il permesso nel browser.</span>`;
-  navigator.geolocation.getCurrentPosition(
-    (pos)=>{
-      const { latitude, longitude, accuracy, altitude, heading, speed } = pos.coords;
-      state.position = { latitude, longitude, accuracy, altitude, heading, speed, timestamp: pos.timestamp };
-      $('coords').textContent = `Lat,Lng: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} • Acc: ±${accuracy}m`;
-      $('geoStatus').innerHTML = `<span class="pill ok">Posizione acquisita.</span>`;
-    },
-    (err)=>{
-      $('geoStatus').innerHTML = `<span class="pill err">Geo errore: ${err.message}</span>`;
-    },
-    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-  );
+function setStatus(msg, type='ok'){
+  const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
+  $('status').innerHTML = `<span class="${cls}">${msg}</span>`;
 }
-function clearGeo(e){
-  e.preventDefault();
-  state.position = null;
-  $('coords').textContent = '—';
-  $('geoStatus').innerHTML = `<span class="pill warn">Posizione cancellata.</span>`;
-}
-
-/* =========================
-   PREVIEW
-========================= */
-function onPhotoPicked(){
-  const file = $('photo').files[0];
-  const prev = $('preview');
-  prev.innerHTML = '';
-  if(!file) return;
-  if(bytesToMB(file.size) > CONFIG.MAX_SIZE_MB){
-    setStatus('La foto supera i ' + CONFIG.MAX_SIZE_MB + ' MB', 'err');
-    $('photo').value = '';
-    return;
-  }
+function clearStatus(){ $('status').innerHTML = ''; }
+function disableUI(b){ $('btnShoot').disabled = b; $('btnPick').disabled = b; }
+function showPreview(file){
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.src = url;
-  img.style.maxWidth = '100%';
   img.onload = ()=> URL.revokeObjectURL(url);
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.appendChild(img);
-  prev.appendChild(card);
+  img.src = url;
+  $('preview').innerHTML = '';
+  $('preview').appendChild(img);
+}
+
+/* =========================
+   GEO helpers
+========================= */
+function getLiveGeoOnce(timeoutMs=6000){
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) return resolve(null);
+    let resolved = false;
+    const done = (val)=>{ if(!resolved){ resolved=true; resolve(val); } };
+    navigator.geolocation.getCurrentPosition(
+      pos => done({
+        source: 'geo',
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy ?? null,
+        altitude: pos.coords.altitude ?? null,
+        timestamp: pos.timestamp || Date.now()
+      }),
+      _ => done(null),
+      { enableHighAccuracy:true, timeout:timeoutMs, maximumAge:0 }
+    );
+    setTimeout(()=> done(null), timeoutMs + 500);
+  });
+}
+
+/* =========================
+   EXIF GPS
+========================= */
+async function extractGpsFromExif(file){
+  try{
+    if(!window.exifr) return null;
+    const gps = await exifr.gps(file);
+    // Prova anche Data/Ora scatto (se presente)
+    const basic = await exifr.parse(file, ['DateTimeOriginal']).catch(()=> ({}));
+    const ts = (basic && basic.DateTimeOriginal instanceof Date) ? basic.DateTimeOriginal.toISOString() : null;
+
+    if (gps && typeof gps.latitude==='number' && typeof gps.longitude==='number'){
+      return {
+        source: 'exif',
+        latitude: gps.latitude,
+        longitude: gps.longitude,
+        altitude: gps.altitude ?? null,
+        timestamp: ts
+      };
+    }
+  }catch(_){}
+  return null;
 }
 
 /* =========================
    UPLOAD
 ========================= */
-async function onUpload(e){
-  e.preventDefault();
-  clearStatus();
-
-  const file = $('photo').files[0];
-  if(!file) return setStatus('Seleziona una foto prima di caricare.', 'err');
-
-  if(bytesToMB(file.size) > CONFIG.MAX_SIZE_MB){
-    return setStatus(`La foto supera i ${CONFIG.MAX_SIZE_MB} MB.`, 'err');
+async function performUpload(file, position, noteIfNoGps){
+  if(!CONFIG.FLOW_URL || CONFIG.FLOW_URL === 'YOUR_FLOW_URL'){
+    setStatus('Configura FLOW_URL nel codice.', 'err');
+    return;
   }
 
   const fd = new FormData();
-  fd.append('file', file, file.name);
+  fd.append('file', file, file.name || 'photo.jpg');
 
-  // dati comuni
+  // position: oggetto con lat/lon, oppure null (GPS non disponibile)
   const payload = {
-    // se c'è proposalId → ramo "allega e aggiorna GPS"
-    // se NON c'è → ramo "salva in UploadTemp"
-    proposalId: $('proposalId').value?.trim() || null,
-    uploadCode: $('uploadCode').value?.trim() || null,
-    note: $('note').value?.trim() || null,
-    position: state.position ? {
-      latitude: state.position.latitude,
-      longitude: state.position.longitude,
-      accuracy: state.position.accuracy,
-      altitude: state.position.altitude ?? null,
-      heading: state.position.heading ?? null,
-      speed: state.position.speed ?? null,
-      timestamp: state.position.timestamp ?? Date.now()
-    } : null
+    proposalId: qs.proposalId || null,     // opzionale (se chiami la pagina con ?proposalId=...)
+    position: position ?? null,            // se null → la lista/flow vede "gps non disponibile"
+    notes: noteIfNoGps ? 'gps non disponibile' : undefined
   };
+
   fd.append('metadata', new Blob([JSON.stringify(payload)], {type:'application/json'}));
 
-  // UI
-  toggleBusy(true);
-  setStatus('Caricamento in corso…', 'warn');
+  disableUI(true);
+  setStatus('Caricamento…', 'warn');
 
   try{
-    const res = await fetch(CONFIG.FLOW_URL, {
-      method:'POST',
-      mode: 'cors',
-      headers: { /* niente Content-Type: FormData lo imposta da sé */ },
-      body: fd
-    });
-
+    const res = await fetch(CONFIG.FLOW_URL, { method:'POST', body: fd, mode:'cors' });
     if(!res.ok){
-      const text = await res.text();
-      throw new Error(`HTTP ${res.status} – ${text}`);
+      const t = await res.text().catch(()=> '');
+      throw new Error(`HTTP ${res.status}${t ? ' – ' + t : ''}`);
     }
+    await res.json().catch(()=> ({}));
+    setStatus(position ? 'Foto caricata (GPS incluso).' : 'Foto caricata (senza GPS).', 'ok');
 
-    const data = await res.json().catch(()=> ({}));
-
-    // Atteso: { ok: true, branch:'temp'|'attach', guid?:'...', message?:'...' }
-    let msg = '';
-    if (data.branch === 'temp') {
-      msg = `Foto salvata in area temporanea. Codice/Guid: <span class="mono">${data.guid || data.uploadCode || '(non ricevuto)'}</span>`;
-      setStatus(msg, 'ok');
-      // se non c’era già uploadCode, mostra quello restituito
-      if(!$('uploadCode').value && data.guid){
-        $('uploadCode').value = data.guid;
-      }
-    } else if (data.branch === 'attach') {
-      msg = `Foto allegata alla riga <span class="mono">${payload.proposalId}</span> e coordinate aggiornate.`;
-      setStatus(msg, 'ok');
+    if(qs.returnUrl){
+      setTimeout(()=> location.href = qs.returnUrl, CONFIG.AUTO_REDIRECT_MS);
     } else {
-      setStatus(data.message || 'Caricamento completato.', 'ok');
+      disableUI(false);
     }
-
   } catch(err){
     console.error(err);
-    setStatus(`Errore durante l’upload: ${err.message}`, 'err');
-  } finally {
-    toggleBusy(false);
+    setStatus('Errore upload: ' + err.message, 'err');
+    disableUI(false);
   }
 }
 
 /* =========================
-   UI Helpers
+   HANDLER
 ========================= */
-function setStatus(msg, type='ok'){
-  const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
-  $('status').innerHTML = `<div class="${cls}">${msg}</div>`;
-}
-function clearStatus(){ $('status').innerHTML = ''; }
-function toggleBusy(busy){
-  $('btnUpload').disabled = busy;
-  $('btnGeo').disabled = busy;
-  $('btnClearGeo').disabled = busy;
-  $('btnReset').disabled = busy;
-}
-function resetForm(e){
-  if(e) e.preventDefault();
-  $('photo').value = '';
-  $('uploadCode').value = state.params.uploadCode || '';
-  $('proposalId').value = state.params.proposalId || '';
-  $('note').value = state.params.note || '';
-  $('preview').innerHTML = '';
-  clearGeo(e);
+async function handleFile(file, mode){ // mode: 'camera' | 'gallery'
   clearStatus();
+  if(!file) return;
+  if(file.size > CONFIG.MAX_MB*1024*1024){
+    setStatus(`Foto > ${CONFIG.MAX_MB} MB (è ${toMB(file.size)} MB).`, 'err');
+    return;
+  }
+  showPreview(file);
+
+  // 1) prova EXIF
+  setStatus('Verifico coordinate nella foto…', 'warn');
+  let pos = await extractGpsFromExif(file);
+
+  // 2) se SCATTO e EXIF assenti → prova posizione attuale (opzionale)
+  if(!pos && mode==='camera'){
+    setStatus('Coordinate EXIF assenti. Provo posizione attuale…', 'warn');
+    pos = await getLiveGeoOnce(6000); // può restare null (ed è ok)
+  }
+
+  const noGps = !pos;
+  await performUpload(file, pos, noGps);
 }
+
+/* =========================
+   UI BIND
+========================= */
+$('btnShoot').addEventListener('click', ()=>{
+  clearStatus();
+  $('inputCamera').click();
+});
+$('btnPick').addEventListener('click', ()=>{
+  clearStatus();
+  $('inputGallery').click();
+});
+$('inputCamera').addEventListener('change', async (e)=>{
+  const f = e.target.files?.[0];
+  await handleFile(f, 'camera');
+  e.target.value = '';
+});
+$('inputGallery').addEventListener('change', async (e)=>{
+  const f = e.target.files?.[0];
+  await handleFile(f, 'gallery');
+  e.target.value = '';
+});
 </script>
 </body>
 </html>
