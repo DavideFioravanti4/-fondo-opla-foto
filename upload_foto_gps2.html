@@ -6,8 +6,8 @@
   <title>Upload foto • GPS opzionale</title>
   <meta name="color-scheme" content="light dark"/>
 
-  <!-- EXIF funzionante (la tua riga era rotta) -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist</script>
+  <!-- EXIF (CORRETTO, PRIMA ERA ROTTO) -->
+  https://unpkg.com/exifr@7.1.3/dist/exifr.min.js
 
   <style>
     :root{ --brand:#0b84f3; --ok:#1aa36f; --warn:#b7791f; --err:#d64545; --bg:#f7fafc; }
@@ -31,6 +31,7 @@
     .footer{ text-align:center; color:#777; font-size:12px; margin-top:16px; }
   </style>
 </head>
+
 <body>
 <header>
   <h1>Upload foto (GPS opzionale)</h1>
@@ -52,62 +53,46 @@
 </main>
 
 <script>
+/* =========================
+   CONFIG
+========================= */
 const CONFIG = {
-  FLOW_URL: 'https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds',
+  FLOW_URL: "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds",
   MAX_MB: 15,
-  AUTO_REDIRECT_MS: 800
+  AUTO_REDIRECT_MS: 1000
 };
 
-const $  = id => document.getElementById(id);
-const toMB = b => (b/1024/1024).toFixed(1);
+const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
-function setStatus(msg, type='ok'){
-  const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
-  $('status').innerHTML = `<span class="${cls}">${msg}</span>`;
+function setStatus(msg, type="ok"){
+  const cls = type==="ok" ? "pill ok" : type==="err" ? "pill err" : "pill warn";
+  $("status").innerHTML = `<span class="${cls}">${msg}</span>`;
 }
-function clearStatus(){ $('status').innerHTML = ''; }
-function disableUI(b){ $('btnShoot').disabled = b; $('btnPick').disabled = b; }
+function clearStatus(){ $("status").innerHTML = ""; }
+function disableUI(dis){ $("btnShoot").disabled = dis; $("btnPick").disabled = dis; }
 
 function showPreview(file){
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = ()=> URL.revokeObjectURL(url);
   img.src = url;
-  $('preview').innerHTML = '';
-  $('preview').appendChild(img);
+  $("preview").innerHTML = "";
+  $("preview").appendChild(img);
 }
 
-async function getLiveGeoOnce(timeoutMs=6000){
-  return new Promise((resolve) => {
-    if (!('geolocation' in navigator)) return resolve(null);
-    let resolved = false;
-    const done = val => { if (!resolved){ resolved = true; resolve(val);} };
-    navigator.geolocation.getCurrentPosition(
-      pos => done({
-        source:'geo',
-        latitude: pos.coords.latitude,
-        longitude:pos.coords.longitude,
-        accuracy: pos.coords.accuracy ?? null,
-        altitude: pos.coords.altitude ?? null,
-        timestamp:pos.timestamp || Date.now()
-      }),
-      _ => done(null),
-      { enableHighAccuracy:true, timeout:timeoutMs, maximumAge:0 }
-    );
-    setTimeout(()=> done(null), timeoutMs+500);
-  });
-}
-
+/* =========================
+   EXIF + GEO (tuo codice)
+========================= */
 async function extractGpsFromExif(file){
   try{
     const gps = await exifr.gps(file);
-    const basic = await exifr.parse(file, ['DateTimeOriginal']).catch(()=>{});
+    const basic = await exifr.parse(file, ["DateTimeOriginal"]).catch(()=>{});
     const ts = basic?.DateTimeOriginal instanceof Date ? basic.DateTimeOriginal.toISOString() : null;
 
-    if (gps && typeof gps.latitude==='number'){
+    if(gps && typeof gps.latitude==="number"){
       return {
-        source:'exif',
+        source:"exif",
         latitude:gps.latitude,
         longitude:gps.longitude,
         altitude:gps.altitude ?? null,
@@ -118,68 +103,93 @@ async function extractGpsFromExif(file){
   return null;
 }
 
-async function performUpload(file, position, noteIfNoGps){
-  const fd = new FormData();
-  fd.append('file', file, file.name || 'photo.jpg');
+function getLiveGeoOnce(timeout=6000){
+  return new Promise(resolve=>{
+    if(!("geolocation" in navigator)) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      pos=>resolve({
+        source:"geo",
+        latitude:pos.coords.latitude,
+        longitude:pos.coords.longitude,
+        accuracy:pos.coords.accuracy ?? null,
+        altitude:pos.coords.altitude ?? null,
+        timestamp:pos.timestamp || Date.now()
+      }),
+      ()=>resolve(null),
+      {enableHighAccuracy:true, timeout, maximumAge:0}
+    );
+    setTimeout(()=>resolve(null), timeout+500);
+  });
+}
 
-  // ✅ AGGIUNTA UPLOADCODE
+/* =========================
+   ✅ CARICAMENTO + UPLOADCODE
+========================= */
+async function performUpload(file, position, noGps){
+  const fd = new FormData();
+  fd.append("file", file, file.name || "photo.jpg");
+
+  // ✅ GENERA UPLOADCODE AUTOMATICO
   const uploadCode = crypto.randomUUID();
 
   const payload = {
-    uploadCode,                      // ✅ ora il flow lo salva nel Log
     proposalId: qs.proposalId || null,
     position: position ?? null,
-    notes: noteIfNoGps ? 'gps non disponibile' : undefined
+    notes: noGps ? "gps non disponibile" : undefined,
+
+    // ✅ NEW
+    uploadCode: uploadCode
   };
 
-  fd.append('metadata', JSON.stringify(payload));
+  fd.append("metadata", JSON.stringify(payload));
 
   disableUI(true);
-  setStatus('Caricamento…', 'warn');
+  setStatus("Caricamento…", "warn");
 
   try{
-    const res = await fetch(CONFIG.FLOW_URL, { method:'POST', body:fd, mode:'cors' });
+    const res = await fetch(CONFIG.FLOW_URL, { method:"POST", body:fd, mode:"cors" });
     if(!res.ok){
-      const t = await res.text().catch(()=> '');
-      throw new Error(`HTTP ${res.status}${t? ' – '+t:''}`);
+      const t = await res.text().catch(()=> "");
+      throw new Error(`HTTP ${res.status} – ${t}`);
     }
 
-    await res.json().catch(()=> ({}));
-    setStatus('Foto caricata!', 'ok');
+    await res.json().catch(()=>{});
+    setStatus("Caricato ✅", "ok");
 
-    // ✅ REDIRECT AL FORM CON UPLOADCODE PRECOMPILATO
+    // ✅ REDIRECT CON UPLOADCODE PRECOMPILATO NEL FORM
     if(qs.returnUrl){
-      const FIELD = 'r2eaf878955164549a839a54cf37c9ea7';  // parametro della tua domanda in Forms
-      const sep = qs.returnUrl.includes('?') ? '&' : '?';
-      const url = `${qs.returnUrl}${sep}${FIELD}=${encodeURIComponent(uploadCode)}`;
+      const PARAM = "r2eaf878955164549a839a54cf37c9ea7"; // nome parametro UploadCode del tuo Forms
+      const sep = qs.returnUrl.includes("?") ? "&" : "?";
+      const url = `${qs.returnUrl}${sep}${PARAM}=${encodeURIComponent(uploadCode)}`;
       setTimeout(()=> location.href = url, CONFIG.AUTO_REDIRECT_MS);
+    } else {
+      disableUI(false);
     }
 
-    disableUI(false);
-
-  } catch(err){
+  }catch(err){
     console.error(err);
-    setStatus('Errore upload: ' + err.message, 'err');
+    setStatus("Errore upload: "+err.message, "err");
     disableUI(false);
   }
 }
 
+/* =========================
+   HANDLER
+========================= */
 async function handleFile(file, mode){
   clearStatus();
   if(!file) return;
 
   if(file.size > CONFIG.MAX_MB*1024*1024){
-    setStatus(`Foto troppo grande (${toMB(file.size)} MB)`, 'err');
+    setStatus(`Foto troppo grande`, "err");
     return;
   }
 
   showPreview(file);
 
-  setStatus('Verifico coordinate nella foto…', 'warn');
   let pos = await extractGpsFromExif(file);
 
-  if(!pos && mode==='camera'){
-    setStatus('Coordinate EXIF assenti. Provo posizione attuale…','warn');
+  if(!pos && mode==="camera"){
     const live = await getLiveGeoOnce(6000);
     if(live) pos = live;
   }
@@ -187,19 +197,18 @@ async function handleFile(file, mode){
   await performUpload(file, pos, !pos);
 }
 
-$('btnShoot').addEventListener('click', ()=>{ clearStatus(); $('inputCamera').click(); });
-$('btnPick').addEventListener('click',  ()=>{ clearStatus(); $('inputGallery').click(); });
+$("btnShoot").addEventListener("click", ()=>{ clearStatus(); $("inputCamera").click(); });
+$("btnPick").addEventListener("click",  ()=>{ clearStatus(); $("inputGallery").click(); });
 
-$('inputCamera').addEventListener('change', async e=>{
-  const f = e.target.files?.[0];
-  await handleFile(f,'camera');
-  e.target.value='';
+$("inputCamera").addEventListener("change", async e=>{
+  await handleFile(e.target.files?.[0], "camera");
+  e.target.value = "";
 });
-$('inputGallery').addEventListener('change', async e=>{
-  const f = e.target.files?.[0];
-  await handleFile(f,'gallery');
-  e.target.value='';
+$("inputGallery").addEventListener("change", async e=>{
+  await handleFile(e.target.files?.[0], "gallery");
+  e.target.value = "";
 });
 </script>
+
 </body>
 </html>
