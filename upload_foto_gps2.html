@@ -6,10 +6,8 @@
   <title>Upload foto • GPS opzionale</title>
   <meta name="color-scheme" content="light dark"/>
 
-  <!-- Lettura EXIF -->
-  <script src="https://unpkg.com/exifr@7.1.3in.js
-
-  <style>
+  <!-- EXIF (lettura GPS e data scatto) -->
+  <script src="https://unpkg.com/exifr@7.1.3/dist/exifr.min.js<style>
     :root{ --brand:#0b84f3; --ok:#1aa36f; --warn:#b7791f; --err:#d64545; --bg:#f7fafc; }
     html,body{ margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
     body{ background:var(--bg); color:#111; }
@@ -43,6 +41,7 @@
     <button id="btnPick" class="secondary">🖼️ Carica foto</button>
   </div>
 
+  <!-- input nascosti -->
   <input id="inputCamera" type="file" accept="image/*" capture="environment" style="display:none"/>
   <input id="inputGallery" type="file" accept="image/*" style="display:none"/>
 
@@ -57,19 +56,19 @@
    CONFIG
 ========================= */
 const CONFIG = {
+  // URL del trigger HTTP del flow (POST anonimo)
   FLOW_URL: 'https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds',
   MAX_MB: 15,
   AUTO_REDIRECT_MS: 800
 };
 
 const $ = id => document.getElementById(id);
-const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
+const qs = Object.fromEntries(new URLSearchParams(location.search).entries()); // ?returnUrl=&proposalId=...
 
 function setStatus(msg, type='ok'){
   const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
   $('status').innerHTML = `<span class="${cls}">${msg}</span>`;
 }
-
 function clearStatus(){ $('status').innerHTML = ''; }
 function disableUI(b){ $('btnShoot').disabled = b; $('btnPick').disabled = b; }
 
@@ -90,8 +89,7 @@ async function extractGpsFromExif(file){
     const gps = await exifr.gps(file);
     const basic = await exifr.parse(file, ['DateTimeOriginal']).catch(()=> ({}));
     const ts = (basic && basic.DateTimeOriginal instanceof Date) ? basic.DateTimeOriginal.toISOString() : null;
-
-    if(gps && gps.latitude && gps.longitude){
+    if (gps && typeof gps.latitude==='number' && typeof gps.longitude==='number'){
       return {
         latitude: gps.latitude,
         longitude: gps.longitude,
@@ -99,21 +97,22 @@ async function extractGpsFromExif(file){
         timestamp: ts
       };
     }
-  }catch{}
+  }catch(_){}
   return null;
 }
 
 /* =========================
-   UPLOAD FOTO + REDIRECT
+   UPLOAD (multipart/form-data) + redirect
 ========================= */
 async function performUpload(file, position, noteIfNoGps){
   const fd = new FormData();
   fd.append('file', file, file.name || 'photo.jpg');
 
-  // ✅ 1) genera uploadCode automatico
-  const uploadCode = crypto.randomUUID();
+  // 1) genera uploadCode (automatico, nessun intervento utente)
+  const uploadCode = (crypto && crypto.randomUUID) ? crypto.randomUUID()
+                                                   : (Date.now() + '-' + Math.random().toString(36).slice(2));
 
-  // ✅ 2) metadata inviati al flow
+  // 2) metadata per il flow
   const payload = {
     uploadCode,
     proposalId: qs.proposalId || null,
@@ -131,20 +130,19 @@ async function performUpload(file, position, noteIfNoGps){
       const t = await res.text().catch(()=> '');
       throw new Error(`HTTP ${res.status}${t ? ' – ' + t : ''}`);
     }
-
     await res.json().catch(()=> ({}));
     setStatus('Foto caricata. Reindirizzamento…', 'ok');
 
-    // ✅ 3) redirect automatico al Form con UploadCode precompilato
+    // 3) redirect automatico al Form con la domanda UploadCode precompilata
     if(qs.returnUrl){
+      // <-- ATTENZIONE: usa il parametro che Forms ti ha dato con Get Pre-filled URL
       const PARAM_UPLOADCODE = 'r2eaf878955164549a839a54cf37c9ea7';
       const sep = qs.returnUrl.includes('?') ? '&' : '?';
-      const url = `${qs.returnUrl}${sep}${PARAM_UPLOADCODE}=${encodeURIComponent(uploadCode)}`;
-      setTimeout(()=> location.href = url, CONFIG.AUTO_REDIRECT_MS);
+      const back = `${qs.returnUrl}${sep}${PARAM_UPLOADCODE}=${encodeURIComponent(uploadCode)}`;
+      setTimeout(()=> location.href = back, CONFIG.AUTO_REDIRECT_MS);
     } else {
       disableUI(false);
     }
-
   } catch(err){
     console.error(err);
     setStatus('Errore upload: ' + err.message, 'err');
@@ -155,41 +153,28 @@ async function performUpload(file, position, noteIfNoGps){
 /* =========================
    HANDLER
 ========================= */
-async function handleFile(file, mode){
+async function handleFile(file){
   clearStatus();
   if(!file) return;
 
   if(file.size > CONFIG.MAX_MB*1024*1024){
-    setStatus(`Foto troppo grande. (${(file.size/1024/1024).toFixed(1)} MB)`, 'err');
+    setStatus(`Foto troppo grande (${(file.size/1024/1024).toFixed(1)} MB)`, 'err');
     return;
   }
 
   showPreview(file);
 
-  setStatus('Verifico eventuale GPS...', 'warn');
-  let pos = await extractGpsFromExif(file);
-
-  const noGps = !pos;
-  await performUpload(file, pos, noGps);
+  setStatus('Verifico eventuale GPS…', 'warn');
+  const pos = await extractGpsFromExif(file); // può essere null (ok)
+  await performUpload(file, pos, !pos);
 }
 
-$('btnShoot').addEventListener('click', ()=>{
-  clearStatus();
-  $('inputCamera').click();
-});
-$('btnPick').addEventListener('click', ()=>{
-  clearStatus();
-  $('inputGallery').click();
-});
+// UI binding
+$('btnShoot').addEventListener('click', ()=>{ clearStatus(); $('inputCamera').click(); });
+$('btnPick').addEventListener('click',  ()=>{ clearStatus(); $('inputGallery').click(); });
 
-$('inputCamera').addEventListener('change', async e=>{
-  await handleFile(e.target.files?.[0], 'camera');
-  e.target.value = '';
-});
-$('inputGallery').addEventListener('change', async e=>{
-  await handleFile(e.target.files?.[0], 'gallery');
-  e.target.value = '';
-});
+$('inputCamera').addEventListener('change', async e=>{ await handleFile(e.target.files?.[0]); e.target.value=''; });
+$('inputGallery').addEventListener('change', async e=>{ await handleFile(e.target.files?.[0]); e.target.value=''; });
 </script>
 
 </body>
