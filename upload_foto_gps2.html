@@ -6,9 +6,8 @@
   <title>Upload foto • GPS opzionale</title>
   <meta name="color-scheme" content="light dark"/>
 
-  <!-- EXIF per GPS/data scatto (best-effort) -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist</script>
-
+  <!-- EXIF per GPS/data scatto (best‑effort) -->
+  <script src="https://unpkg.com/exifr@7.1.3/dist/exifr.min
   <style>
     :root{ --brand:#0b84f3; --ok:#1aa36f; --warn:#b7791f; --err:#d64545; --bg:#f7fafc; }
     html,body{ margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
@@ -47,23 +46,19 @@
   <div id="status"  class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v3.1 • solo “Aggiungi foto” • picker unico + compress (≤1MB/1600px) • uploadCode + redirect</div>
+  <div class="footer">v3.2 • solo “Aggiungi foto” • picker unico + compress (≤1MB/1600px) • uploadCode + redirect</div>
 </main>
 
 <script>
-/* =========================
-   CONFIG
-========================= */
 const CONFIG = {
   FLOW_URL: "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds",
-
-  TARGET_MAX_BYTES: 1 * 1024 * 1024, // ~1 MB per evitare 502
-  TARGET_MAX_DIM  : 1600,             // lato lungo max 1600 px
+  TARGET_MAX_BYTES: 1 * 1024 * 1024,
+  TARGET_MAX_DIM  : 1600,
   AUTO_REDIRECT_MS: 800
 };
 
 const $  = id => document.getElementById(id);
-const qs = Object.fromEntries(new URLSearchParams(location.search).entries()); // ?returnUrl=&proposalId=...
+const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
 function setStatus(msg, type='ok'){
   const cls = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
@@ -81,9 +76,6 @@ function showPreview(file){
   $('preview').appendChild(img);
 }
 
-/* =========================
-   RIDUZIONE/CONVERSIONE UNIVERSALE
-========================= */
 async function downscaleToJPEG(file, maxBytes = CONFIG.TARGET_MAX_BYTES, maxDim = CONFIG.TARGET_MAX_DIM){
   const encode = async (bitmap) => {
     const w0 = bitmap.width, h0 = bitmap.height;
@@ -124,18 +116,13 @@ async function downscaleToJPEG(file, maxBytes = CONFIG.TARGET_MAX_BYTES, maxDim 
     return await encode(img);
 
   }catch(e){
-    // se fallisce la conversione, inviamo comunque l’originale
     return file;
   }
 }
 
-/* =========================
-   EXIF GPS (best‑effort)
-========================= */
 async function extractGpsFromExif(file){
   try{
     if(!window.exifr) return null;
-    // Evita picchi di memoria su file enormi
     if (file.size && file.size > 6*1024*1024) return null;
 
     const gps   = await exifr.gps(file);
@@ -149,9 +136,6 @@ async function extractGpsFromExif(file){
   return null;
 }
 
-/* =========================
-   UPLOAD (multipart/form-data) + redirect
-========================= */
 async function performUpload(file, position, noteIfNoGps){
   const fd = new FormData();
   fd.append('file', file, file.name || 'photo.jpg');
@@ -181,7 +165,7 @@ async function performUpload(file, position, noteIfNoGps){
     setStatus('Foto caricata. Reindirizzamento…', 'ok');
 
     if(qs.returnUrl){
-      const FIELD = 'r2eaf878955164549a839a54cf37c9ea7'; // parametro della tua domanda UploadCode nel Form
+      const FIELD = 'r2eaf878955164549a839a54cf37c9ea7';
       const sep = qs.returnUrl.includes('?') ? '&' : '?';
       const url = `${qs.returnUrl}${sep}${FIELD}=${encodeURIComponent(uploadCode)}`;
       setTimeout(()=> location.href = url, CONFIG.AUTO_REDIRECT_MS);
@@ -195,33 +179,24 @@ async function performUpload(file, position, noteIfNoGps){
   }
 }
 
-/* =========================
-   HANDLER
-========================= */
 async function handleFile(file){
   clearStatus();
   if(!file) return;
 
   showPreview(file);
-
   setStatus('Verifico eventuale GPS…', 'warn');
-  const pos = await extractGpsFromExif(file); // best‑effort
 
-  // Riduzione/convert a JPEG prima dell'invio (indipendente dal device)
+  const pos = await extractGpsFromExif(file); // best‑effort
   const slim = await downscaleToJPEG(file);
   await performUpload(slim, pos, !pos);
 }
 
-/* =========================
-   BINDINGS
-========================= */
 $('btnAdd').addEventListener('click', ()=>{ clearStatus(); $('inputPicker').click(); });
 
 $('inputPicker').addEventListener('change', async e=>{
   await handleFile(e.target.files?.[0]);
-  e.target.value = ''; // reset per scatti consecutivi
+  e.target.value = '';
 });
 </script>
 </body>
 </html>
-``
