@@ -1,7 +1,5 @@
 <!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8"/>
+<html lang=" <meta charset="utf-8"/><html lang="it">
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Upload foto • GPS opzionale</title>
   <meta name="color-scheme" content="light dark"/>
@@ -39,7 +37,7 @@
   <p style="text-align:center;margin:0 0 8px;color:#555;">Fondo Oplà • Pagina caricata</p>
 
   <div class="row-btn">
-    <button id="btnShoot" class="primary">📷 Scatta foto</button>
+    <!-- RIMOSSO: <button id="btnShoot" class="primary">📷 Scatta foto</button> -->
     <button id="btnPick"  class="secondary">🖼️ Carica foto</button>
   </div>
 
@@ -72,7 +70,7 @@ function setStatus(msg, type='ok'){
   $('status').innerHTML = `<span class="${cls}">${msg}</span>`;
 }
 function clearStatus(){ $('status').innerHTML = ''; }
-function disableUI(b){ $('btnShoot').disabled = b; $('btnPick').disabled = b; }
+function disableUI(b){ /* RIMOSSO rifer. a btnShoot */ $('btnPick').disabled = b; }
 
 function showPreview(file){
   const url = URL.createObjectURL(file);
@@ -216,7 +214,7 @@ async function handleFile(file){
 /* =========================
    BINDINGS (un solo picker per tutti)
 ========================= */
-$('btnShoot').addEventListener('click', ()=>{ clearStatus(); $('inputPicker').click(); });
+/* RIMOSSO listener di btnShoot */
 $('btnPick').addEventListener('click',  ()=>{ clearStatus(); $('inputPicker').click(); });
 
 $('inputPicker').addEventListener('change', async e=>{
@@ -226,3 +224,4 @@ $('inputPicker').addEventListener('change', async e=>{
 </script>
 </body>
 </html>
+<head>
