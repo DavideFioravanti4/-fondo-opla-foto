@@ -1,9 +1,10 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!doctype html><!doctype<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Fondo Oplà – Upload Foto</title>
+
+<!-- EXIF GPS -->
+<script src="https://unpkg.com/exifr/dist/exifr.min.js"></script>
 
 <style>
     body {
@@ -44,11 +45,6 @@
         margin-top: 0;
         margin-bottom: 32px;
     }
-    /* Input nascosto */
-    #fotoInput {
-        display: none;
-    }
-    /* Tasto verde */
     .btn {
         width: 100%;
         padding: 16px;
@@ -63,6 +59,14 @@
     }
     .btn:hover {
         background: #1da18c;
+    }
+    #fotoInput {
+        display: none;
+    }
+    #status {
+        margin-top: 12px;
+        font-weight: 600;
+        color: #333;
     }
 </style>
 </head>
@@ -80,66 +84,122 @@
     <input type="file" accept="image/*" capture="environment" id="fotoInput">
 
     <button class="btn" onclick="caricaFoto()">Aggiungi foto</button>
+
+    <div id="status"></div>
 </div>
 
+
 <script>
-// ✅ URL DEL FLUSSO (il tuo, già corretto)
+/* ============================================================
+   CONFIG — il tuo flusso PowerAutomate
+============================================================ */
 const FLOW_URL =
   "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";
 
-// ✅ Legge i parametri dalla querystring
-const params = new URLSearchParams(window.location.search);
-const uploadCode = params.get("uploadCode");
+const params     = new URLSearchParams(window.location.search);
 const returnUrl  = params.get("returnUrl");
+const proposalId = params.get("proposalId") || null;
 
-function caricaFoto() {
 
-    const fileInput = document.getElementById('fotoInput');
+/* ============================================================
+   GPS EXIF
+============================================================ */
+async function getExifGps(file){
+    try{
+        const gps = await exifr.gps(file);
+        if (gps && gps.latitude && gps.longitude){
+            return {
+                latitude:  gps.latitude,
+                longitude: gps.longitude,
+                altitude:  gps.altitude ?? null,
+                timestamp: null
+            };
+        }
+    }catch(_){}
+    return null;
+}
+
+
+/* ============================================================
+   GPS fallback (geolocalizzazione live)
+============================================================ */
+function getLiveGps(){
+    return new Promise(resolve=>{
+        if(!navigator.geolocation) return resolve(null);
+
+        navigator.geolocation.getCurrentPosition(
+            pos => resolve({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                altitude: pos.coords.altitude ?? null,
+                timestamp: Date.now()
+            }),
+            _   => resolve(null),
+            {enableHighAccuracy:true,timeout:6000}
+        );
+    });
+}
+
+
+/* ============================================================
+   Upload
+============================================================ */
+async function uploadToFlow(file, position){
+    const uploadCode = crypto.randomUUID();
+
+    const metadata = {
+        uploadCode: uploadCode,
+        proposalId: proposalId,
+        position: position
+    };
+
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    fd.append("fileName", file.name);
+    fd.append("metadata", JSON.stringify(metadata));
+
+    document.getElementById("status").innerHTML = "Caricamento…";
+
+    const res = await fetch(FLOW_URL, { method:"POST", body:fd });
+
+    if(!res.ok){
+        document.getElementById("status").innerHTML = "Errore nell'invio.";
+        return;
+    }
+
+    document.getElementById("status").innerHTML = "✅ Foto caricata";
+
+    if(returnUrl){
+        setTimeout(()=>{ window.location.href = returnUrl; }, 800);
+    }
+}
+
+
+/* ============================================================
+   MAIN HANDLER
+============================================================ */
+function caricaFoto(){
+    const fileInput = document.getElementById("fotoInput");
     fileInput.click();
 
-    fileInput.onchange = async function () {
-        if (!fileInput.files.length) return;
+    fileInput.onchange = async function(){
+        if(!fileInput.files.length) return;
+
         const file = fileInput.files[0];
 
-        if (!uploadCode) {
-            alert("Errore: uploadCode mancante.");
-            return;
+        // GPS da EXIF
+        let gps = await getExifGps(file);
+
+        // fallback GEO
+        if(!gps){
+            gps = await getLiveGps();
         }
 
-        // ✅ metadata richiesto dal flusso
-        const metadata = JSON.stringify({
-            uploadCode: uploadCode,
-            position: null
-        });
-
-        // ✅ FormData esattamente come il flusso richiede
-        const fd = new FormData();
-        fd.append("file", file, file.name);
-        fd.append("fileName", file.name);
-        fd.append("metadata", metadata);
-
-        try {
-            const res = await fetch(FLOW_URL, {
-                method: "POST",
-                body: fd
-            });
-
-            if (!res.ok) {
-                alert("Errore nell'invio al server.");
-                return;
-            }
-
-            alert("✅ Foto caricata correttamente!");
-
-            if (returnUrl) window.location.href = returnUrl;
-
-        } catch (err) {
-            console.error(err);
-            alert("❌ Errore durante il caricamento.");
-        }
+        await uploadToFlow(file, gps);
     };
 }
 </script>
 
 </body>
 </html>
+<html lang="it">
