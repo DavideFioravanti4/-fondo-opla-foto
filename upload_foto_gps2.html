@@ -1,118 +1,145 @@
 <!DOCTYPE html>
 <html lang="it">
-<headUTF-8" /><head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fondo Oplà – Upload Foto</title>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fondo Oplà – Upload Foto</title>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background: url('sfondo.png') center/cover no-repeat fixed;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding-top: 40px;
-            min-height: 100vh;
-        }
-
-        .card {
-            width: 92%;
-            max-width: 450px;
-            background: rgba(255, 255, 255, 0.92);
-            border-radius: 22px;
-            padding: 35px 30px 45px 30px;
-            text-align: center;
-            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
-            backdrop-filter: blur(5px);
-        }
-
-        .logo img {
-            width: 70%;
-            max-width: 260px;
-            margin-bottom: 5px;
-        }
-
-        h1 {
-            font-size: 1.9rem;
-            color: #e55353;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        p {
-            font-size: 1rem;
-            color: #444;
-            margin-top: 0;
-            margin-bottom: 32px;
-        }
-
-        /* Input nascosto */
-        #fotoInput {
-            display: none;
-        }
-
-        /* Tasto verde */
-        .btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            background: #26c3a8;
-            color: #fff;
-            font-size: 1.15rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.25s;
-        }
-
-        .btn:hover {
-            background: #1da18c;
-        }
-    </style>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: url('sfondo.png') center/cover no-repeat fixed;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 40px;
+        min-height: 100vh;
+    }
+    .card {
+        width: 92%;
+        max-width: 450px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 22px;
+        padding: 35px 30px 45px 30px;
+        text-align: center;
+        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(5px);
+    }
+    .logo img {
+        width: 70%;
+        max-width: 260px;
+        margin-bottom: 5px;
+    }
+    h1 {
+        font-size: 1.9rem;
+        color: #e55353;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    p {
+        font-size: 1rem;
+        color: #444;
+        margin-top: 0;
+        margin-bottom: 32px;
+    }
+    /* Input nascosto */
+    #fotoInput {
+        display: none;
+    }
+    /* Tasto verde */
+    .btn {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        background: #26c3a8;
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.25s;
+    }
+    .btn:hover {
+        background: #1da18c;
+    }
+</style>
 </head>
 
 <body>
 
-    <div class="card">
-
-        <!-- LOGO -->
-        <div class="logo">
-            <img src="LogoUltimaVersione.png" alt="Logo Fondo Oplà">
-        </div>
-
-        <h1>Carica la tua foto</h1>
-        <p>Scatta o seleziona un’immagine per completare la tua proposta.</p>
-
-        <!-- INPUT FILE NASCOSTO -->
-        <input type="file" accept="image/*" capture="environment" id="fotoInput">
-
-        <!-- TASTO VERDE UNICO -->
-        <button class="btn" onclick="caricaFoto()">Aggiungi foto</button>
-
+<div class="card">
+    <div class="logo">
+        <img src="LogoUltimaVersione.png" alt="Logo Fondo Oplà">
     </div>
 
-    <script>
-        function caricaFoto() {
-            const fileInput = document.getElementById('fotoInput');
+    <h1>Carica la tua foto</h1>
+    <p>Scatta o seleziona un’immagine per completare la tua proposta.</p>
 
-            // Apri selettore file / fotocamera
-            fileInput.click();
+    <input type="file" accept="image/*" capture="environment" id="fotoInput">
 
-            fileInput.onchange = function () {
-                if (!fileInput.files.length) return;
+    <button class="btn" onclick="caricaFoto()">Aggiungi foto</button>
+</div>
 
-                alert("Foto caricata correttamente!");
+<script>
+// ✅ URL DEL FLUSSO (il tuo, già corretto)
+const FLOW_URL =
+  "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";
 
-                // Redirect al returnUrl
-                const params = new URLSearchParams(window.location.search);
-                const returnUrl = params.get('returnUrl');
-                if (returnUrl) window.location.href = returnUrl;
-            }
+// ✅ Legge i parametri dalla querystring
+const params = new URLSearchParams(window.location.search);
+const uploadCode = params.get("uploadCode");
+const returnUrl  = params.get("returnUrl");
+
+function caricaFoto() {
+
+    const fileInput = document.getElementById('fotoInput');
+    fileInput.click();
+
+    fileInput.onchange = async function () {
+        if (!fileInput.files.length) return;
+        const file = fileInput.files[0];
+
+        if (!uploadCode) {
+            alert("Errore: uploadCode mancante.");
+            return;
         }
-    </script>
+
+        // ✅ metadata richiesto dal flusso
+        const metadata = JSON.stringify({
+            uploadCode: uploadCode,
+            position: null
+        });
+
+        // ✅ FormData esattamente come il flusso richiede
+        const fd = new FormData();
+        fd.append("file", file, file.name);
+        fd.append("fileName", file.name);
+        fd.append("metadata", metadata);
+
+        try {
+            const res = await fetch(FLOW_URL, {
+                method: "POST",
+                body: fd
+            });
+
+            if (!res.ok) {
+                alert("Errore nell'invio al server.");
+                return;
+            }
+
+            alert("✅ Foto caricata correttamente!");
+
+            if (returnUrl) window.location.href = returnUrl;
+
+        } catch (err) {
+            console.error(err);
+            alert("❌ Errore durante il caricamento.");
+        }
+    };
+}
+</script>
 
 </body>
 </html>
-`` 
