@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html lang="UTF-8" /><html lang="it">
+<html lang="it">
+<headUTF-8" /><head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fondo Oplà – Upload Foto</title>
 
     <style>
-        /* ------------------------------
-           FONT & RESET
-        ------------------------------ */
         body {
             margin: 0;
             padding: 0;
@@ -19,32 +17,23 @@
             min-height: 100vh;
         }
 
-        /* ------------------------------
-           OVERLAY CARD
-        ------------------------------ */
         .card {
             width: 92%;
             max-width: 450px;
-            background: rgba(255, 255, 255, 0.90);
+            background: rgba(255, 255, 255, 0.92);
             border-radius: 22px;
-            padding: 30px;
+            padding: 35px 30px 45px 30px;
+            text-align: center;
             box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
             backdrop-filter: blur(5px);
-            text-align: center;
         }
 
-        /* ------------------------------
-           LOGO
-        ------------------------------ */
         .logo img {
             width: 70%;
             max-width: 260px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
-        /* ------------------------------
-           TITOLO
-        ------------------------------ */
         h1 {
             font-size: 1.9rem;
             color: #e55353;
@@ -56,49 +45,23 @@
             font-size: 1rem;
             color: #444;
             margin-top: 0;
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
 
-        /* ------------------------------
-           UPLOAD BOX
-        ------------------------------ */
-        .upload-area {
-            border: 2px dashed #f2b700;
-            background: #fffdf4;
-            border-radius: 16px;
-            padding: 30px 20px;
-            cursor: pointer;
-            transition: 0.25s;
-        }
-
-        .upload-area:hover {
-            background: #fff7d4;
-        }
-
-        .upload-area input {
+        /* Input nascosto */
+        #fotoInput {
             display: none;
         }
 
-        .upload-area span {
-            display: block;
-            margin-top: 14px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        /* ------------------------------
-           SUBMIT BUTTON
-        ------------------------------ */
+        /* Tasto verde */
         .btn {
             width: 100%;
-            margin-top: 28px;
-            padding: 15px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
             background: #26c3a8;
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 700;
             cursor: pointer;
             transition: 0.25s;
@@ -119,41 +82,37 @@
             <img src="LogoUltimaVersione.png" alt="Logo Fondo Oplà">
         </div>
 
-        <!-- TITOLO E TESTO -->
         <h1>Carica la tua foto</h1>
         <p>Scatta o seleziona un’immagine per completare la tua proposta.</p>
 
-        <!-- UPLOAD BOX -->
-        <label class="upload-area">
-            <input type="file" accept="image/*" capture="environment" id="fotoInput">
-            📸
-            <span>Tocca qui per caricare la foto</span>
-        </label>
+        <!-- INPUT FILE NASCOSTO -->
+        <input type="file" accept="image/*" capture="environment" id="fotoInput">
 
-        <!-- BOTTONE -->
-        <button class="btn" onclick="inviaFoto()">Invia Immagine</button>
+        <!-- TASTO VERDE UNICO -->
+        <button class="btn" onclick="caricaFoto()">Aggiungi foto</button>
+
     </div>
 
     <script>
-        function inviaFoto() {
+        function caricaFoto() {
             const fileInput = document.getElementById('fotoInput');
 
-            if (!fileInput.files.length) {
-                alert("Per favore seleziona o scatta una foto prima di procedere.");
-                return;
+            // Apri selettore file / fotocamera
+            fileInput.click();
+
+            fileInput.onchange = function () {
+                if (!fileInput.files.length) return;
+
+                alert("Foto caricata correttamente!");
+
+                // Redirect al returnUrl
+                const params = new URLSearchParams(window.location.search);
+                const returnUrl = params.get('returnUrl');
+                if (returnUrl) window.location.href = returnUrl;
             }
-
-            // ✅ Questa è la logica base che avevi.
-            //    Il redirect continuerà a funzionare con il tuo returnUrl.
-            const urlParams = new URLSearchParams(window.location.search);
-            const returnUrl = urlParams.get('returnUrl');
-
-            alert("Foto caricata correttamente!");
-
-            if (returnUrl) window.location.href = returnUrl;
         }
     </script>
 
 </body>
 </html>
-<head>
+``
