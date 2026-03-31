@@ -1,9 +1,11 @@
-<!doctype html><!doctype<head>
+<!doctype html>
+<html lang="it">
+<head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Fondo Oplà – Upload Foto</title>
 
-<!-- EXIF GPS -->
+<!-- EXIF per GPS -->
 <script src="https://unpkg.com/exifr/dist/exifr.min.js"></script>
 
 <style>
@@ -45,6 +47,7 @@
         margin-top: 0;
         margin-bottom: 32px;
     }
+    #fotoInput { display:none; }
     .btn {
         width: 100%;
         padding: 16px;
@@ -57,16 +60,12 @@
         cursor: pointer;
         transition: 0.25s;
     }
-    .btn:hover {
-        background: #1da18c;
-    }
-    #fotoInput {
-        display: none;
-    }
+    .btn:hover { background: #1da18c; }
     #status {
-        margin-top: 12px;
+        margin-top: 14px;
+        font-size: 15px;
         font-weight: 600;
-        color: #333;
+        color: #444;
     }
 </style>
 </head>
@@ -74,8 +73,9 @@
 <body>
 
 <div class="card">
+
     <div class="logo">
-        <img src="LogoUltimaVersione.png" alt="Logo Fondo Oplà">
+        LogoUltimaVersione.png
     </div>
 
     <h1>Carica la tua foto</h1>
@@ -86,43 +86,43 @@
     <button class="btn" onclick="caricaFoto()">Aggiungi foto</button>
 
     <div id="status"></div>
+
 </div>
 
-
 <script>
-/* ============================================================
-   CONFIG — il tuo flusso PowerAutomate
-============================================================ */
+/* ==========================
+   CONFIG
+========================== */
 const FLOW_URL =
-  "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";
+ "https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/9fcb17d91fb04381a99b73253c58be13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jKLvegzU4_lKaF9gI_bmCIZeiSu2Kl-itRJ7_ZjVFds";
 
 const params     = new URLSearchParams(window.location.search);
 const returnUrl  = params.get("returnUrl");
 const proposalId = params.get("proposalId") || null;
 
+// ✅ Questo è l’ID della domanda UploadCode trovata tramite ispezione
+const FIELD_UPLOADCODE = "r2eaf878955164549a839a54cf37c9ea7";
 
-/* ============================================================
+/* ==========================
    GPS EXIF
-============================================================ */
+========================== */
 async function getExifGps(file){
     try{
         const gps = await exifr.gps(file);
-        if (gps && gps.latitude && gps.longitude){
+        if(gps && gps.latitude && gps.longitude){
             return {
-                latitude:  gps.latitude,
+                latitude: gps.latitude,
                 longitude: gps.longitude,
-                altitude:  gps.altitude ?? null,
-                timestamp: null
+                altitude: gps.altitude ?? null
             };
         }
-    }catch(_){}
+    }catch(e){}
     return null;
 }
 
-
-/* ============================================================
-   GPS fallback (geolocalizzazione live)
-============================================================ */
+/* ==========================
+   GEO fallback
+========================== */
 function getLiveGps(){
     return new Promise(resolve=>{
         if(!navigator.geolocation) return resolve(null);
@@ -131,26 +131,24 @@ function getLiveGps(){
             pos => resolve({
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
-                altitude: pos.coords.altitude ?? null,
-                timestamp: Date.now()
+                altitude: pos.coords.altitude ?? null
             }),
-            _   => resolve(null),
+            _ => resolve(null),
             {enableHighAccuracy:true,timeout:6000}
         );
     });
 }
 
-
-/* ============================================================
-   Upload
-============================================================ */
-async function uploadToFlow(file, position){
+/* ==========================
+   Upload a PowerAutomate
+========================== */
+async function uploadToFlow(file, gps){
     const uploadCode = crypto.randomUUID();
 
     const metadata = {
         uploadCode: uploadCode,
         proposalId: proposalId,
-        position: position
+        position: gps
     };
 
     const fd = new FormData();
@@ -158,42 +156,40 @@ async function uploadToFlow(file, position){
     fd.append("fileName", file.name);
     fd.append("metadata", JSON.stringify(metadata));
 
-    document.getElementById("status").innerHTML = "Caricamento…";
+    document.getElementById("status").innerText = "Caricamento…";
 
     const res = await fetch(FLOW_URL, { method:"POST", body:fd });
 
     if(!res.ok){
-        document.getElementById("status").innerHTML = "Errore nell'invio.";
+        document.getElementById("status").innerText = "Errore nell'invio";
         return;
     }
 
-    document.getElementById("status").innerHTML = "✅ Foto caricata";
+    document.getElementById("status").innerText = "✅ Foto caricata";
 
+    // ✅ Invio uploadCode al Microsoft Form
     if(returnUrl){
-        setTimeout(()=>{ window.location.href = returnUrl; }, 800);
+        const sep = returnUrl.includes("?") ? "&" : "?";
+        const url = `${returnUrl}${sep}${FIELD_UPLOADCODE}=${encodeURIComponent(uploadCode)}`;
+        setTimeout(()=>{ window.location.href = url; }, 800);
     }
 }
 
-
-/* ============================================================
-   MAIN HANDLER
-============================================================ */
+/* ==========================
+   MAIN
+========================== */
 function caricaFoto(){
-    const fileInput = document.getElementById("fotoInput");
-    fileInput.click();
+    const f = document.getElementById("fotoInput");
+    f.click();
 
-    fileInput.onchange = async function(){
-        if(!fileInput.files.length) return;
+    f.onchange = async function(){
+        if(!f.files.length) return;
 
-        const file = fileInput.files[0];
+        const file = f.files[0];
 
-        // GPS da EXIF
+        // GPS (EXIF → fallback GEO)
         let gps = await getExifGps(file);
-
-        // fallback GEO
-        if(!gps){
-            gps = await getLiveGps();
-        }
+        if(!gps) gps = await getLiveGps();
 
         await uploadToFlow(file, gps);
     };
@@ -202,4 +198,3 @@ function caricaFoto(){
 
 </body>
 </html>
-<html lang="it">
