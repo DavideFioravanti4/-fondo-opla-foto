@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v4.8 – logo grande + riquadro piccolo + sfondo -->
+  <!-- v4.8 – logo gigante + riquadro compatto + foto+video -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -52,29 +52,33 @@
       text-align:center;
     }
 
+    /* ✅ LOGO GIGANTE E CENTRATO */
     .logo{
       display:block;
-      margin:0 auto 18px;
-      width:240px;
+      margin:0 auto 24px;
+      width:300px;    /* ← LOGO MOLTO GRANDE */
       height:auto;
     }
 
     .intro{
-      margin:0 0 16px;
+      margin:0 0 20px;
       color:#444;
       font-size:20px;
       font-weight:600;
     }
 
+    /* ✅ PULSANTI IN COLONNA (UNO SOTTO L'ALTRO) */
     .row-btn{
       display:flex;
-      justify-content:center;
+      flex-direction:column;   /* ← COLONNA */
+      align-items:center;
       gap:14px;
       margin-top:14px;
-      flex-wrap:wrap;
     }
 
     button{
+      width:100%;                /* ← LARGHEZZA INTERA */
+      max-width:300px;
       border:none;
       border-radius:12px;
       padding:14px 22px;
@@ -83,6 +87,7 @@
       font-size:16px;
       color:#fff;
       display:flex;
+      justify-content:center;
       align-items:center;
       gap:8px;
     }
@@ -134,12 +139,12 @@
 
 <main>
 
-  <!-- ✅ LOGO GRANDE -->
-  LogoUltimaVersione.png
+  <!-- ✅ LOGO GIGANTE (IMMAGINE) -->
+  <img src="LogoUltimaVersione.png" class="logo">
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
-  <!-- ✅ DUE TASTI -->
+  <!-- ✅ PULSANTI IN COLONNA -->
   <div class="row-btn">
     <button id="btnPhoto" class="btn-photo">📸 Aggiungi foto</button>
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
@@ -175,7 +180,7 @@ function setStatus(msg,type='ok'){
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
-/* ANTEPRIMA */
+/* Anteprima */
 function showPreview(file){
   const url = URL.createObjectURL(file);
   const p = $('preview');
