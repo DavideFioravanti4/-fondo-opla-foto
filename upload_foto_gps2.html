@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v5.6 – box ultra-compatto + logo gigante + foto+video -->
+  <!-- v5.7 – logo enorme nel box + ultra compatto -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -12,7 +12,7 @@
   <title>Upload foto / video</title>
 
   <!-- EXIF -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
+  https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js
 
   <style>
     :root{
@@ -40,7 +40,7 @@
       font-weight:700;
     }
 
-    /* ULTRA COMPACT BOX */
+    /* BOX COMPATTO */
     main{
       width:260px;
       max-width:92%;
@@ -48,18 +48,17 @@
       background:#fff;
       border:1px solid #e5e7eb;
       border-radius:12px;
-      padding:6px 10px 12px;
+      padding:8px 10px 14px;
       box-shadow:0 2px 12px rgba(0,0,0,.10);
       text-align:center;
     }
 
-    /* LOGO GRANDE (testo come da tua logica PowerApps) */
-    .logo{
-      font-size:28px;   
-      font-weight:800;
-      margin:-6px 0 10px;
-      color:#111;
+    /* LOGO GRANDE INSERITO COME IMMAGINE */
+    .logo-img{
       display:block;
+      margin:0 auto 12px;
+      width:250px;         /* Grande */
+      height:auto;
     }
 
     .intro{
@@ -141,25 +140,23 @@
 
 <main>
 
-  <!-- LOGO MOLTO GRANDE (come richiesto) -->
-  <div class="logo">LogoUltimaVersione.png</div>
+  <!-- LOGO ENORME COME IMMAGINE -->
+  <img src="LogoUltimaVersione.png" class="logo-img" alt="Logo Oplà">
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
-  <!-- Pulsanti -->
   <div class="row-btn">
     <button id="btnPhoto" class="btn-photo">📸 Aggiungi foto</button>
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
   </div>
 
-  <!-- Picker invisibili -->
   <input id="inputPhoto" type="file" accept="image/*" style="display:none"/>
   <input id="inputVideo" type="file" accept="video/*" style="display:none"/>
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v5.6</div>
+  <div class="footer">v5.7</div>
 
 </main>
 
@@ -177,38 +174,38 @@ const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
 function setStatus(msg,type='ok'){
-  const c = type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
-  $('status').innerHTML = `<span class="${c}">${msg}</span>`;
+  const c=type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
+  $('status').innerHTML=`<span class="${c}">${msg}</span>`;
 }
 
 function showPreview(file){
-  const url = URL.createObjectURL(file);
-  const p = $('preview');
+  const url=URL.createObjectURL(file);
+  const p=$('preview');
   p.innerHTML='';
 
   if(file.type.startsWith("image/")){
-    const img = new Image();
-    img.onload = () => URL.revokeObjectURL(url);
-    img.src = url;
+    const img=new Image();
+    img.onload=()=>URL.revokeObjectURL(url);
+    img.src=url;
     p.appendChild(img);
   } else {
-    const vid = document.createElement("video");
-    vid.src = url;
-    vid.controls = true;
-    vid.onloadeddata = () => URL.revokeObjectURL(url);
+    const vid=document.createElement("video");
+    vid.src=url;
+    vid.controls=true;
+    vid.onloadeddata=()=>URL.revokeObjectURL(url);
     p.appendChild(vid);
   }
 }
 
 async function downscaleToJPEG(file){
   try{
-    const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, CONFIG.TARGET_MAX_DIM / Math.max(bmp.width,bmp.height));
-    const w = Math.round(bmp.width*scale);
-    const h = Math.round(bmp.height*scale);
+    const bmp=await createImageBitmap(file);
+    const scale=Math.min(1,CONFIG.TARGET_MAX_DIM/Math.max(bmp.width,bmp.height));
+    const w=Math.round(bmp.width*scale);
+    const h=Math.round(bmp.height*scale);
 
     const canvas=document.createElement("canvas");
-    canvas.width=w; 
+    canvas.width=w;
     canvas.height=h;
     canvas.getContext("2d").drawImage(bmp,0,0,w,h);
 
@@ -237,7 +234,7 @@ async function performUpload(file,position,noGps){
   const fd=new FormData();
   fd.append("file",file,file.name);
 
-  const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
+  const uploadCode=crypto?.randomUUID?crypto.randomUUID():Date.now();
 
   fd.append("metadata",JSON.stringify({
     uploadCode,
