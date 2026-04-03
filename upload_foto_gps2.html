@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v5.7 FULL-FIXED + H.264 + 10s + Logo -->
+  <!-- v5.8 FULL-FIXED + EXIF + H.264 + 10s + Logo -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -146,13 +146,14 @@
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
   </div>
 
-  <input id="inputPhoto" type="file" accept="image/*" style="display:none"/>
+  <!-- ✅ Fix Android/iOS: picker unico -->
+  <input id="inputPhoto" type="file" accept="image/*" capture="environment" style="display:none"/>
   <input id="inputVideo" type="file" accept="video/*" style="display:none"/>
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v5.7+</div>
+  <div class="footer">v5.8</div>
 
 </main>
 
@@ -180,14 +181,57 @@ function showPreview(file){
   const url = URL.createObjectURL(file);
 
   if(file.type.startsWith("image/")){
-    $('preview').innerHTML = `<img src="${url}" style="max-width:100%; border-radius:10px; border:1px solid #e5e7eb;">`;
-  } else {
-    $('preview').innerHTML = `<video src="${url}" controls style="max-width:100%; border-radius:10px; border:1px solid #e5e7eb;"></video>`;
+    $('preview').innerHTML = `<img src="${url}" style="max-width:100%; border-radius:10px; border:1px solid #e) return;
+
+  setStatus("Elaborazione foto…","warn");
+
+  try{
+    const exif = await exifr.parse(file).catch(()=>null);
+    const imgBitmap = await createImageBitmap(file);
+
+    let w = imgBitmap.width;
+    let h = imgBitmap.height;
+
+    let rotate = 0;
+    if(exif && exif.Orientation){
+      switch(exif.Orientation){
+        case 6: rotate = 90; break;
+        case 3: rotate = 180; break;
+        case 8: rotate = -90; break;
+      }
+    }
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if(rotate === 90 || rotate === -90){
+      canvas.width = h;
+      canvas.height = w;
+    } else {
+      canvas.width = w;
+      canvas.height = h;
+    }
+
+    ctx.save();
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(rotate * Math.PI/180);
+    ctx.drawImage(imgBitmap, -w/2, -h/2);
+    ctx.restore();
+
+    const blob = await new Promise(res => canvas.toBlob(res,"image/jpeg",0.9));
+    const finalFile = new File([blob], "foto.jpg",{type:"image/jpeg"});
+
+    showPreview(finalFile);
+    await performUpload(finalFile);
+  }
+  catch(err){
+    console.error(err);
+    setStatus("Errore nella foto","err");
   }
 }
 
 
-/* ✅ VIDEO (H.264 + compress+limit 10s) */
+/* ✅ VIDEO (H.264 + compress + limit 10s) */
 async function handleVideo(file){
   if(!file) return;
 
@@ -221,6 +265,7 @@ async function handleVideo(file){
   await performUpload(finalFile);
 }
 
+
 /* ✅ UPLOAD */
 async function performUpload(file){
   const fd=new FormData();
@@ -231,12 +276,15 @@ async function performUpload(file){
   setStatus("✅ Operazione completata");
 }
 
+
 /* ✅ EVENTI */
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
-$('inputPhoto').addEventListener('change',e=>{handlePhoto(e.target.files[0]); e.target.value='';});
-$('inputVideo').addEventListener('change',e=>{handleVideo(e.target.files[0]); e.target.value='';});
+$('inputPhoto').addEventListener('change',e=>{ handlePhoto(e.target.files[0]); e.target.value=''; });
+$('inputVideo').addEventListener('change',e=>{ handleVideo(e.target.files[0]); e.target.value=''; });
+
 </script>
 
 </body>
 </html>
+``
