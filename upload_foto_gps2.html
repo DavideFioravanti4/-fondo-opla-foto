@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v6.0-A – stabile senza conversione video -->
+  <!-- v6.0-A STABILE (senza conversione video) -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -11,10 +11,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Upload foto / video</title>
 
-  <!-- ✅ EXIF CORRETTO -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umdpt>
-
-  <style>
+  <!-- ✅ EXIF corretto -->
+  <script src="https://unpkg.com/exifr@7.1.3/dist/full  <style>
     :root{
       --brand:#0b84f3;
       --warn:#b7791f;
@@ -55,6 +53,7 @@
       display:block;
       margin:-10px auto 10px;
       width:330px;
+      max-width:100%;
       height:auto;
     }
 
@@ -105,9 +104,9 @@
       display:inline-block;
     }
 
-    .ok{ background:#e8f7f1; color:#0c6b4e; }
-    .warn{ background:#fff7e6; color:#8a6100; }
-    .err{ background:#fde8e8; color:#7e1f1f; }
+    .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
+    .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
+    .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
 
     .preview{
       margin-top:10px;
@@ -127,7 +126,9 @@
       color:#555;
       text-align:center;
     }
+
   </style>
+
 </head>
 
 <body>
@@ -136,10 +137,8 @@
 
 <main>
 
-  <!-- ✅ LOGO VISIBILE (TAG IMG) -->
-  <img src="LogoUltimaVersione.png" class="logo" alt="Logo Fondo Oplà">
-
-  <div class="intro">Fondo Oplà • Pagina caricata</div>
+  <!-- ✅ LOGO PNG REALE -->
+  <img src="LogoUltimaVersione.png" class="ro">Fondo Oplà • Pagina caricata</div>
 
   <div class="row-btn">
     <button id="btnPhoto" class="btn-photo">📸 Aggiungi foto</button>
@@ -162,7 +161,7 @@
 const VERSION = "v6.0-A";
 document.getElementById("version").textContent = VERSION;
 
-/* ✅ CONFIG ORIGINALE */
+/* CONFIG invariato */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
   MAX_VIDEO_MB: 15
@@ -181,13 +180,17 @@ function showPreview(file){
   const url = URL.createObjectURL(file);
   $('preview').innerHTML =
     file.type.startsWith("image/")
-      ? `<img src function handlePhoto(file){
+      ? `<img src      : `${url}</video>`;
+}
+
+/* ✅ FOTO invariata */
+async function handlePhoto(file){
   showPreview(file);
   setStatus("Caricamento foto…","warn");
   await performUpload(file);
 }
 
-/* ✅ VIDEO (no conversione) */
+/* ✅ VIDEO invariato (nessuna conversione) */
 async function handleVideo(file){
   if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
@@ -197,11 +200,11 @@ async function handleVideo(file){
   await performUpload(file);
 }
 
-/* ✅ UPLOAD */
+/* ✅ UPLOAD invariato */
 async function performUpload(file){
   const fd = new FormData();
-  fd.append("file",file,file.name);
-  fd.append("metadata","{}");
+  fd.append("file", file, file.name);
+  fd.append("metadata", "{}");
 
   await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
   setStatus("✅ Operazione completata","ok");
@@ -210,7 +213,6 @@ async function performUpload(file){
 /* ✅ EVENTI */
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
-
 $('inputPhoto').addEventListener('change',e=>handlePhoto(e.target.files[0]));
 $('inputVideo').addEventListener('change',e=>handleVideo(e.target.files[0]));
 
