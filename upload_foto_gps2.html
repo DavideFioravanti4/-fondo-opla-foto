@@ -10,10 +10,9 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Upload foto / video</title>
-  <meta name="color-scheme" content="light dark"/>
 
-  <!-- ✅ EXIF corretto -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
+  <!-- ✅ EXIF CORRETTO -->
+  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umdpt>
 
   <style>
     :root{
@@ -105,6 +104,7 @@
       font-weight:600;
       display:inline-block;
     }
+
     .ok{ background:#e8f7f1; color:#0c6b4e; }
     .warn{ background:#fff7e6; color:#8a6100; }
     .err{ background:#fde8e8; color:#7e1f1f; }
@@ -128,7 +128,6 @@
       text-align:center;
     }
   </style>
-
 </head>
 
 <body>
@@ -137,8 +136,8 @@
 
 <main>
 
-  <!-- ✅ Logo PNG dal tuo repo -->
-  <div class="logo">LogoUltimaVersione.png</div>
+  <!-- ✅ LOGO VISIBILE (TAG IMG) -->
+  <img src="LogoUltimaVersione.png" class="logo" alt="Logo Fondo Oplà">
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
@@ -153,17 +152,17 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <!-- ✅ Footer con versione reale -->
   <div class="footer" id="version"></div>
 
 </main>
 
+
 <script>
-/* ✅ Versione reale */
+/* ✅ versione reale */
 const VERSION = "v6.0-A";
 document.getElementById("version").textContent = VERSION;
 
-/* ✅ CONFIG invariato */
+/* ✅ CONFIG ORIGINALE */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
   MAX_VIDEO_MB: 15
@@ -171,24 +170,24 @@ const CONFIG = {
 
 const $ = id => document.getElementById(id);
 
-/* ✅ UI status */
-function setStatus(msg, type='ok'){
+/* ✅ STATUS */
+function setStatus(msg,type='ok'){
   const c = type==='ok'?'pill ok':type==='warn'?'pill warn':'pill err';
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
-/* ✅ preview invariata */
+/* ✅ PREVIEW */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-  $('preview').innerHTML = file.type.startsWith("image/")
-    ? `<img src="${url} FOTO (come funzionava) */
-async function handlePhoto(file){
+  $('preview').innerHTML =
+    file.type.startsWith("image/")
+      ? `<img src function handlePhoto(file){
   showPreview(file);
   setStatus("Caricamento foto…","warn");
   await performUpload(file);
 }
 
-/* ✅ VIDEO (nessuna conversione – come prima) */
+/* ✅ VIDEO (no conversione) */
 async function handleVideo(file){
   if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
@@ -198,22 +197,23 @@ async function handleVideo(file){
   await performUpload(file);
 }
 
-/* ✅ upload invariato */
+/* ✅ UPLOAD */
 async function performUpload(file){
   const fd = new FormData();
-  fd.append("file", file, file.name);
-  fd.append("metadata", "{}");
+  fd.append("file",file,file.name);
+  fd.append("metadata","{}");
 
-  await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+  await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
   setStatus("✅ Operazione completata","ok");
 }
 
-/* ✅ Eventi */
+/* ✅ EVENTI */
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
 
 $('inputPhoto').addEventListener('change',e=>handlePhoto(e.target.files[0]));
 $('inputVideo').addEventListener('change',e=>handleVideo(e.target.files[0]));
+
 </script>
 
 </body>
