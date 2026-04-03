@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v8.1 – Single Button, Foto OK, Video Convertiti Veloci -->
+  <!-- ✅ v9.0 – Single Button, Foto OK, Video Conversione ULTRAFAST -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -11,11 +11,9 @@
 
   <title>Upload foto / video</title>
 
-  <!-- ✅ EXIF per GPS Foto -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
-
-  <!-- ✅ FFMPEG WASM -->
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
+  <!-- ✅ EXIF PER GPS FOTO -->
+  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd-- ✅ FFMPEG WASM – CORRETTO -->
+  <script src="https://unpkg.com/@ffmpeg//dist/ffmpeg.min.js
 
   <style>
     :root{
@@ -68,20 +66,12 @@
       font-weight:600;
     }
 
-    .row-btn{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      align-items:center;
-      margin-top:6px;
-    }
-
     button{
       width:100%;
       max-width:220px;
       border:none;
       border-radius:10px;
-      padding:10px 14px;
+      padding:11px 14px;
       font-weight:700;
       cursor:pointer;
       font-size:15px;
@@ -91,16 +81,10 @@
 
     .status{ margin-top:8px; min-height:28px; }
 
-    .pill{
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:600;
-      display:inline-block;
-    }
-    .ok{ background:#e8f7f1;color:#0c6b4e; }
-    .warn{ background:#fff7e6;color:#8a6100; }
-    .err{ background:#fde8e8;color:#7e1f1f; }
+    .pill{ padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+    .ok{ background:#e8f7f1; color:#0c6b4e; }
+    .warn{ background:#fff7e6; color:#8a6100; }
+    .err{ background:#fde8e8; color:#7e1f1f; }
 
     .preview{
       margin-top:10px;
@@ -117,8 +101,8 @@
     .footer{
       margin-top:10px;
       font-size:11px;
-      text-align:center;
       color:#555;
+      text-align:center;
     }
 
   </style>
@@ -130,20 +114,16 @@
 
 <main>
 
-  <img src="LogoUltimaVersione.png" class="logo-img"/>
+  <img src="LogoUltimaVersione.png" class="logo-img"/Oplà • Pagina caricata</div>
 
-  <div class="intro">Fondo Oplà • Pagina caricata</div>
-
-  <div class="row-btn">
-    <button id="btnFile">📤 Aggiungi foto/video</button>
-  </div>
+  <button id="btnFile">📤 Aggiungi foto/video</button>
 
   <input id="inputFile" type="file" accept="image/*,video/*" style="display:none"/>
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v8.1 ONE BUTTON</div>
+  <div class="footer">v9.0 ONE BUTTON</div>
 
 </main>
 
@@ -157,19 +137,24 @@ const $ = id => document.getElementById(id);
 
 /* ✅ STATUS */
 function setStatus(msg,type='ok'){
-  const c = type==='ok'?'pill ok':type==='warn'?'pill warn':'pill err';
-  $('status').innerHTML = `<span class="${c}">${msg}</span>`;
+  const c = type==='ok' ? 'pill ok' : type==='warn' ? 'pill warn' : 'pill err';
+  $("status").innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
 /* ✅ PREVIEW */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-  if(file.type.startsWith("image/.innerHTML = `<video controls src="${
+  if(file.type.startsWith("image/")){
+    $("preview").innerHTML = `<img src="${urlse {
+    $("preview").innerHTML = `${url}</video>`;
+  }
+}
+
 /* ✅ UPLOAD */
 async function uploadFile(file){
   const fd = new FormData();
   fd.append("file", file, file.name);
-  await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+  await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
 }
 
 /* ✅ FOTO */
@@ -180,7 +165,7 @@ async function processPhoto(file){
   setStatus("✅ Foto caricata","ok");
 }
 
-/* ✅ VIDEO – conversione ULTRAVELOCE */
+/* ✅ VIDEO – conversione ULTRAFAST */
 async function processVideo(file){
   if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus("Video troppo grande","err");
@@ -188,10 +173,10 @@ async function processVideo(file){
   showPreview(file);
   setStatus("Conversione video…","warn");
 
-  const {createFFmpeg, fetchFile} = FFmpeg;
-  const ffmpeg = createFFmpeg({log:false});
-  await ffmpeg.load();
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log:false });
 
+  await ffmpeg.load();
   ffmpeg.FS("writeFile","input.mp4", await fetchFile(file));
 
   await ffmpeg.run(
@@ -207,14 +192,15 @@ async function processVideo(file){
   );
 
   const data = ffmpeg.FS("readFile","output.mp4");
-  const finalFile = new File([data.buffer],"video.mp4",{type:"video/mp4"});
+  const finalFile = new File([data.buffer], "video.mp4", {type:"video/mp4"});
 
   setStatus("Caricamento video…","warn");
   await uploadFile(finalFile);
+
   setStatus("✅ Video caricato","ok");
 }
 
-/* ✅ HANDLER UNICO */
+/* ✅ DECISIONE UNICA */
 async function handleFile(file){
   if(!file) return;
   if(file.type.startsWith("image/")) return processPhoto(file);
@@ -223,8 +209,8 @@ async function handleFile(file){
 }
 
 /* ✅ EVENTI */
-$('btnFile').addEventListener('click',()=> $('inputFile').click());
-$('inputFile').addEventListener('change', e=>{
+$("btnFile").addEventListener("click", ()=> $("inputFile").click());
+$("inputFile").addEventListener("change", e=>{
   handleFile(e.target.files[0]);
   e.target.value='';
 });
