@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- ✅ v9.0 – Single Button, Foto OK, Video Conversione ULTRAFAST -->
+  <!-- v10 – Single Button • Foto OK • Video ULTRAFAST • Nessuna pagina bianca -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -11,14 +11,13 @@
 
   <title>Upload foto / video</title>
 
-  <!-- ✅ EXIF PER GPS FOTO -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd-- ✅ FFMPEG WASM – CORRETTO -->
-  <script src="https://unpkg.com/@ffmpeg//dist/ffmpeg.min.js
+  <!-- ✅ EXIF CORRETTO -->
+  <script src="https://unpkg.com/exifr@7.1.md.min.js
 
-  <style>
+  <!-- ✅ FFMPEG CORRETTO (QUESTA VOLTA VERO SCRIPT) -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpegtyle>
     :root{
       --brand:#0b84f3;
-      --warn:#b7791f;
       --bg:#eef4ff;
     }
 
@@ -28,12 +27,11 @@
       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
       background:var(--bg) url("sfondo.png") no-repeat center center fixed;
       background-size:cover;
-      color:#111;
     }
 
     header{
       padding:14px;
-      background:linear-gradient(90deg,var(--brand),#6bb6ff);
+      background:#0b84f3;
       color:#fff;
       text-align:center;
       font-size:19px;
@@ -42,70 +40,50 @@
 
     main{
       width:260px;
-      max-width:92%;
-      margin:12px auto;
+      margin:18px auto;
       background:#fff;
-      border:1px solid #e5e7eb;
       border-radius:12px;
-      padding:8px 10px 14px;
+      padding:12px;
       text-align:center;
-      box-shadow:0 2px 12px rgba(0,0,0,.10);
+      box-shadow:0 2px 12px rgba(0,0,0,.15);
     }
 
     .logo-img{
-      display:block;
-      margin:0 auto 12px;
-      width:250px;
-      height:auto;
-    }
-
-    .intro{
-      margin:0 0 10px;
-      color:#444;
-      font-size:15px;
-      font-weight:600;
+      width:220px;
+      margin-bottom:12px;
     }
 
     button{
       width:100%;
-      max-width:220px;
+      padding:12px;
+      background:#0b84f3;
       border:none;
+      color:#fff;
       border-radius:10px;
-      padding:11px 14px;
       font-weight:700;
       cursor:pointer;
-      font-size:15px;
-      color:#fff;
-      background:var(--brand);
+      font-size:16px;
     }
 
-    .status{ margin-top:8px; min-height:28px; }
-
-    .pill{ padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; }
-    .ok{ background:#e8f7f1; color:#0c6b4e; }
-    .warn{ background:#fff7e6; color:#8a6100; }
-    .err{ background:#fde8e8; color:#7e1f1f; }
-
-    .preview{
-      margin-top:10px;
-      display:flex;
-      justify-content:center;
-    }
-
-    .preview img,.preview video{
+    .preview img, .preview video{
       max-width:100%;
+      margin-top:12px;
       border-radius:10px;
-      border:1px solid #e5e7eb;
+      border:1px solid #ddd;
     }
 
-    .footer{
+    .status{
       margin-top:10px;
-      font-size:11px;
-      color:#555;
-      text-align:center;
+      font-size:14px;
+      min-height:20px;
     }
+
+    .ok{ color:#0c6b4e; }
+    .warn{ color:#8a6100; }
+    .err{ color:#a71d1d; }
 
   </style>
+
 </head>
 
 <body>
@@ -114,16 +92,12 @@
 
 <main>
 
-  <img src="LogoUltimaVersione.png" class="logo-img"/Oplà • Pagina caricata</div>
-
-  <button id="btnFile">📤 Aggiungi foto/video</button>
+  <img src="LogoUltimaVersioneutton id="btnFile">📤 Aggiungi foto/video</button>
 
   <input id="inputFile" type="file" accept="image/*,video/*" style="display:none"/>
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
-
-  <div class="footer">v9.0 ONE BUTTON</div>
 
 </main>
 
@@ -135,37 +109,30 @@ const CONFIG = {
 
 const $ = id => document.getElementById(id);
 
-/* ✅ STATUS */
-function setStatus(msg,type='ok'){
-  const c = type==='ok' ? 'pill ok' : type==='warn' ? 'pill warn' : 'pill err';
-  $("status").innerHTML = `<span class="${c}">${msg}</span>`;
+function setStatus(msg, cls="ok"){
+  $("status").innerHTML = `<span class="${cls}">${msg}</span>`;
 }
 
-/* ✅ PREVIEW */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-  if(file.type.startsWith("image/")){
-    $("preview").innerHTML = `<img src="${urlse {
-    $("preview").innerHTML = `${url}</video>`;
-  }
-}
-
-/* ✅ UPLOAD */
-async function uploadFile(file){
-  const fd = new FormData();
-  fd.append("file", file, file.name);
-  await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
+  $("preview").innerHTML = file.type.startsWith("image/")
+    ? `${url}`
+    : `${url}</video>`;
 }
 
 /* ✅ FOTO */
 async function processPhoto(file){
   showPreview(file);
   setStatus("Caricamento foto…","warn");
-  await uploadFile(file);
+
+  const fd = new FormData();
+  fd.append("file", file, file.name);
+
+  await fetch(CONFIG.FLOW_URL,{method:"POST", body:fd});
   setStatus("✅ Foto caricata","ok");
 }
 
-/* ✅ VIDEO – conversione ULTRAFAST */
+/* ✅ VIDEO – conversione ULTRAVELOCE */
 async function processVideo(file){
   if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus("Video troppo grande","err");
@@ -174,9 +141,9 @@ async function processVideo(file){
   setStatus("Conversione video…","warn");
 
   const { createFFmpeg, fetchFile } = FFmpeg;
-  const ffmpeg = createFFmpeg({ log:false });
-
+  const ffmpeg = createFFmpeg({log:false});
   await ffmpeg.load();
+
   ffmpeg.FS("writeFile","input.mp4", await fetchFile(file));
 
   await ffmpeg.run(
@@ -194,15 +161,16 @@ async function processVideo(file){
   const data = ffmpeg.FS("readFile","output.mp4");
   const finalFile = new File([data.buffer], "video.mp4", {type:"video/mp4"});
 
-  setStatus("Caricamento video…","warn");
-  await uploadFile(finalFile);
+  const fd = new FormData();
+  fd.append("file", finalFile, finalFile.name);
 
+  setStatus("Caricamento…","warn");
+  await fetch(CONFIG.FLOW_URL,{method:"POST", body:fd});
   setStatus("✅ Video caricato","ok");
 }
 
-/* ✅ DECISIONE UNICA */
+/* ✅ DECISIONE */
 async function handleFile(file){
-  if(!file) return;
   if(file.type.startsWith("image/")) return processPhoto(file);
   if(file.type.startsWith("video/")) return processVideo(file);
   setStatus("Formato non supportato","err");
@@ -214,6 +182,7 @@ $("inputFile").addEventListener("change", e=>{
   handleFile(e.target.files[0]);
   e.target.value='';
 });
+
 </script>
 
 </body>
