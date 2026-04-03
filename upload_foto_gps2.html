@@ -12,7 +12,7 @@
   <title>Upload foto / video</title>
 
   <!-- EXIF -->
-  https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js
+  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
 
   <style>
     :root{
@@ -53,11 +53,12 @@
       text-align:center;
     }
 
-    /* LOGO GRANDE INSERITO COME IMMAGINE */
+    /* ✅ LOGO MOLTO GRANDE E CENTRALE */
     .logo-img{
       display:block;
-      margin:0 auto 12px;
-      width:250px;         /* Grande */
+      margin:0 auto 18px;
+      width:85%;
+      max-width:420px;
       height:auto;
     }
 
@@ -140,8 +141,8 @@
 
 <main>
 
-  <!-- LOGO ENORME COME IMMAGINE -->
-  LogoUltimaVersione.png
+  <!-- ✅ LOGO GRANDE E CENTRALE -->
+  <img src="LogoUltimaVersione.png" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
@@ -301,4 +302,3 @@ $('inputVideo').addEventListener('change',e=>{
 
 </body>
 </html>
-
