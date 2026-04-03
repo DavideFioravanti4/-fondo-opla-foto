@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v8.0 – Single Button, Foto OK, Video Convertiti Veloci -->
+  <!-- v8.1 – Single Button, Foto OK, Video Convertiti Veloci -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -14,7 +14,7 @@
   <!-- ✅ EXIF per GPS Foto -->
   <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
 
-  <!-- ✅ FFMPEG WASM per conversione video veloce -->
+  <!-- ✅ FFMPEG WASM -->
   <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
 
   <style>
@@ -107,6 +107,7 @@
       display:flex;
       justify-content:center;
     }
+
     .preview img,.preview video{
       max-width:100%;
       border-radius:10px;
@@ -121,15 +122,14 @@
     }
 
   </style>
-
 </head>
+
 <body>
 
 <header>Upload foto / video</header>
 
 <main>
 
-  <!-- ✅ Logo -->
   <img src="LogoUltimaVersione.png" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
@@ -143,12 +143,11 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v8.0 ONE BUTTON</div>
+  <div class="footer">v8.1 ONE BUTTON</div>
 
 </main>
 
 <script>
-/* ✅ CONFIG */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
   MAX_VIDEO_MB:60
@@ -165,13 +164,11 @@ function setStatus(msg,type='ok'){
 /* ✅ PREVIEW */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-
-  if(file.type.startsWith("image/")){
-    $('preview').innerHTML/* ✅ UPLOAD */
+  if(file.type.startsWith("image/.innerHTML = `<video controls src="${
+/* ✅ UPLOAD */
 async function uploadFile(file){
   const fd = new FormData();
   fd.append("file", file, file.name);
-
   await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
 }
 
@@ -183,7 +180,7 @@ async function processPhoto(file){
   setStatus("✅ Foto caricata","ok");
 }
 
-/* ✅ VIDEO – conversione veloce */
+/* ✅ VIDEO – conversione ULTRAVELOCE */
 async function processVideo(file){
   if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus("Video troppo grande","err");
@@ -200,12 +197,12 @@ async function processVideo(file){
   await ffmpeg.run(
     "-i","input.mp4",
     "-t","10",
-    "-vf","scale=640:-1",
+    "-vf","scale=480:-1",
     "-vcodec","libx264",
     "-preset","ultrafast",
-    "-crf","32",
+    "-crf","35",
     "-acodec","aac",
-    "-b:a","48k",
+    "-b:a","32k",
     "output.mp4"
   );
 
@@ -214,17 +211,14 @@ async function processVideo(file){
 
   setStatus("Caricamento video…","warn");
   await uploadFile(finalFile);
-
   setStatus("✅ Video caricato","ok");
 }
 
 /* ✅ HANDLER UNICO */
 async function handleFile(file){
   if(!file) return;
-
   if(file.type.startsWith("image/")) return processPhoto(file);
   if(file.type.startsWith("video/")) return processVideo(file);
-
   setStatus("Formato non supportato","err");
 }
 
