@@ -7,9 +7,9 @@
 <title>Upload foto / video</title>
 
 <!-- ✅ EXIF CORRETTO -->
-<script src="https://unpkg.com/exifr@7.1.md.min.js</script>
+<script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
 
-<!-- ✅ FFMPEG PER CONVERSIONE VIDEO (FUNZIONA DAVVERO) -->
+<!-- ✅ FFMPEG PER CONVERSIONE VIDEO -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
 
 <style>
@@ -49,13 +49,13 @@
     text-align:center;
   }
 
-  /* ✅ LOGO ENORME E CENTRATO */
+  /* ✅ LOGO GRANDE */
   .logo-img{
     display:block;
     margin:0 auto 12px;
     width:300px;
-    max-width:90%;
     height:auto;
+    max-width:90%;
   }
 
   .intro{
@@ -105,9 +105,9 @@
     display:inline-block;
   }
 
-  .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
-  .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
-  .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
+  .ok{background:#e8f7f1; color:#0c6b4e;}
+  .warn{background:#fff7e6; color:#8a6100;}
+  .err{background:#fde8e8; color:#7e1f1f;}
 
   .preview{
     margin-top:10px;
@@ -133,8 +133,8 @@
 
 <main>
 
-  <!-- ✅ LOGO INSERITO CORRETTAMENTE -->
-  <img src="LogoUltimaVersione.png" class="logo-img" alt="Logo Oplà">
+  <!-- ✅ LOGO -->
+  LogoUltimaVersione.png
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
@@ -155,18 +155,16 @@
 
 
 <script>
-/* ✅ Versione reale */
-const VERSION = "v6.0-A+VIDEO";
+const VERSION = "v7.0";
 document.getElementById("version").textContent = VERSION;
 
-/* ✅ CONFIG ORIGINALE */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
   MAX_VIDEO_MB: 25
 };
 
 const MAX_SECONDS = 10;
-const VIDEO_BITRATE = "900k";
+const BITRATE = "900k";
 
 const $ = id => document.getElementById(id);
 
@@ -181,24 +179,23 @@ function showPreview(file){
   const url = URL.createObjectURL(file);
   $('preview').innerHTML =
     file.type.startsWith("image/")
-      ? `<img src="${
+      ? `<img srcunction handlePhoto(file){
   showPreview(file);
   setStatus("Caricamento foto…","warn");
   await performUpload(file);
 }
 
-/* ✅ VIDEO: compressione + conversione + limite 10s */
+/* ✅ VIDEO → compressione + conversione + 10s */
 async function handleVideo(file){
-
   if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   setStatus("Conversione video…","warn");
 
   const { createFFmpeg, fetchFile } = FFmpeg;
-  const ffmpeg = createFFmpeg({ log:false });
-
+  const ffmpeg = createFFmpeg({log:false});
   await ffmpeg.load();
+
   ffmpeg.FS("writeFile","input.mp4", await fetchFile(file));
 
   await ffmpeg.run(
@@ -206,14 +203,14 @@ async function handleVideo(file){
     "-t", String(MAX_SECONDS),
     "-vcodec","libx264",
     "-preset","veryfast",
-    "-b:v", VIDEO_BITRATE,
+    "-b:v",BITRATE,
     "-acodec","aac",
     "-b:a","96k",
     "output.mp4"
   );
 
   const data = ffmpeg.FS("readFile","output.mp4");
-  const finalFile = new File([data.buffer],"video.mp4",{type:"video/mp4"});
+  const finalFile = new File([data.buffer], "video.mp4",{type:"video/mp4"});
 
   showPreview(finalFile);
   setStatus("Caricamento video…","warn");
@@ -223,7 +220,7 @@ async function handleVideo(file){
 /* UPLOAD */
 async function performUpload(file){
   const fd=new FormData();
-  fd.append("file", file, file.name);
+  fd.append("file",file,file.name);
   fd.append("metadata","{}");
 
   await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
