@@ -54,7 +54,6 @@
       box-shadow:0 2px 12px rgba(0,0,0,.10);
     }
 
-    /* ✅ LOGO GRANDE */
     .logo-img{
       display:block;
       margin:0 auto 12px;
@@ -137,7 +136,7 @@
 
 <main>
 
-  <!-- ✅ LOGO IMMAGINE -->
+  <!-- ✅ LOGO -->
   <img src="LogoUltimaVersione.png" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
@@ -158,7 +157,7 @@
 </main>
 
 <script>
-/* ✅ CONFIG ORIGINALE (non toccato) */
+/* ✅ CONFIG ORIGINALE */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
   MAX_VIDEO_MB:25
@@ -166,7 +165,6 @@ const CONFIG = {
 
 const MAX_SECONDS = 10;
 const VB = "900k";
-
 const $ = id => document.getElementById(id);
 
 /* ✅ STATUS */
@@ -175,25 +173,28 @@ function setStatus(msg,type='ok'){
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
-/* ✅ PREVIEW */
+/* ✅ PREVIEW FUNZIONANTE */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-  $('preview').innerHTML =
-    file.type.startsWith("image/")
+
+  if(file.type.startsWith("image/")){
+    $('preview').innerHTML = `<img* ✅ FOTO */
+async function handlePhoto(file){
   if(!file) return;
   showPreview(file);
   setStatus("Caricamento foto…","warn");
   await performUpload(file);
 }
 
-/* ✅ VIDEO → compress + convert + 10 sec */
+/* ✅ VIDEO (H.264 + compress+limit 10s) */
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
+  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024){
     return setStatus("Video troppo grande","err");
+  }
 
-  setStatus("Conversione…","warn");
+  setStatus("Conversione video…","warn");
 
   const { createFFmpeg, fetchFile } = FFmpeg;
   const ffmpeg = createFFmpeg({ log:false });
@@ -206,7 +207,7 @@ async function handleVideo(file){
     "-t","10",
     "-vcodec","libx264",
     "-preset","veryfast",
-    "-b:v",VB,
+    "-b:v", VB,
     "-acodec","aac",
     "-b:a","96k",
     "output.mp4"
@@ -219,7 +220,7 @@ async function handleVideo(file){
   await performUpload(finalFile);
 }
 
-/* ✅ UPLOAD ORIGINALE */
+/* ✅ UPLOAD */
 async function performUpload(file){
   const fd=new FormData();
   fd.append("file",file,file.name);
@@ -229,19 +230,11 @@ async function performUpload(file){
   setStatus("✅ Operazione completata");
 }
 
-/* ✅ EVENTI 5.7 ORIGINALE (attiva i tasti) */
+/* ✅ EVENTI */
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
-
-$('inputPhoto').addEventListener('change',e=>{
-  handlePhoto(e.target.files[0]);
-  e.target.value='';
-});
-
-$('inputVideo').addEventListener('change',e=>{
-  handleVideo(e.target.files[0]);
-  e.target.value='';
-});
+$('inputPhoto').addEventListener('change',e=>{handlePhoto(e.target.files[0]); e.target.value='';});
+$('inputVideo').addEventListener('change',e=>{handleVideo(e.target.files[0]); e.target.value='';});
 </script>
 
 </body>
