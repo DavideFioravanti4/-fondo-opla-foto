@@ -175,14 +175,17 @@ function setStatus(msg,type='ok'){
 
 /* ✅ PREVIEW FUNZIONANTE */
 function showPreview(file){
+  if(!file) return;
+
   const url = URL.createObjectURL(file);
 
   if(file.type.startsWith("image/")){
-    $('preview').innerHTML = `<img src="${url}" />`;
+    $('preview').innerHTML = `<img src="${url}" style="max-width:100%; border-radius:10px; border:1px solid #e5e7eb;">`;
   } else {
-    $('preview').innerHTML = `<video controls src="${url}"></video>`;
+    $('preview').innerHTML = `<video src="${url}" controls style="max-width:100%; border-radius:10px; border:1px solid #e5e7eb;"></video>`;
   }
 }
+
 
 /* ✅ VIDEO (H.264 + compress+limit 10s) */
 async function handleVideo(file){
