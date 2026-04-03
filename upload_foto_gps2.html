@@ -1,151 +1,172 @@
+<!-- META -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Upload foto / video</title>
-  
-https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js
-  <style>
-    :root{
-      --brand:#0b84f3;
-      --warn:#b7791f;
-      --bg:#eef4ff;
-    }
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload foto / video</title>
 
-    html,body{
-      margin:0;
-      padding:0;
-      font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-      background:var(--bg) url("sfondo.png") no-repeat center center fixed;
-      background-size:cover;
-      color:#111;
-    }
+<!-- ✅ EXIF CORRETTO -->
+<script src="https://unpkg.com/exifr@7.1.md.min.js</script>
 
-    header{
-      padding:14px;
-      background:linear-gradient(90deg, var(--brand), #6bb6ff);
-      color:#fff;
-      text-align:center;
-      font-size:19px;
-      font-weight:700;
-    }
+<!-- ✅ FFMPEG PER CONVERSIONE VIDEO (FUNZIONA DAVVERO) -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
 
-    main{
-      width:260px;
-      max-width:92%;
-      margin:12px auto;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:8px 10px 14px;
-      box-shadow:0 2px 12px rgba(0,0,0,.10);
-      text-align:center;
-    }
+<style>
+  :root{
+    --brand:#0b84f3;
+    --warn:#b7791f;
+    --bg:#eef4ff;
+  }
 
-    .logo-img{
-      display:block;
-      margin:0 auto 12px;
-      width:250px;
-      height:auto;
-    }
+  html,body{
+    margin:0;
+    padding:0;
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg) url("sfondo.png") no-repeat center center fixed;
+    background-size:cover;
+    color:#111;
+  }
 
-    .intro{
-      margin:0 0 10px;
-      color:#444;
-      font-size:15px;
-      font-weight:600;
-    }
+  header{
+    padding:14px;
+    background:linear-gradient(90deg, var(--brand), #6bb6ff);
+    color:#fff;
+    text-align:center;
+    font-size:19px;
+    font-weight:700;
+  }
 
-    .row-btn{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:8px;
-      margin-top:6px;
-    }
+  main{
+    width:260px;
+    max-width:92%;
+    margin:12px auto;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:8px 10px 14px;
+    box-shadow:0 2px 12px rgba(0,0,0,.10);
+    text-align:center;
+  }
 
-    button{
-      width:100%;
-      max-width:220px;
-      border:none;
-      border-radius:10px;
-      padding:10px 14px;
-      font-weight:700;
-      cursor:pointer;
-      font-size:15px;
-      color:#fff;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:6px;
-    }
+  /* ✅ LOGO ENORME E CENTRATO */
+  .logo-img{
+    display:block;
+    margin:0 auto 12px;
+    width:300px;
+    max-width:90%;
+    height:auto;
+  }
 
-    .btn-photo{ background:var(--brand); }
-    .btn-video{ background:var(--warn); }
+  .intro{
+    margin:0 0 10px;
+    color:#444;
+    font-size:15px;
+    font-weight:600;
+  }
 
-    .status{
-      margin-top:8px;
-      min-height:28px;
-    }
+  .row-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+  }
 
-    .pill{
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:600;
-      display:inline-block;
-    }
+  button{
+    width:100%;
+    max-width:220px;
+    border:none;
+    border-radius:10px;
+    padding:10px 14px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:15px;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:6px;
+  }
 
-    .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
-    .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
-    .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
+  .btn-photo{ background:var(--brand); }
+  .btn-video{ background:var(--warn); }
 
-    .preview{
-      margin-top:10px;
-      display:flex;
-      justify-content:center;
-    }
+  .status{
+    margin-top:8px;
+    min-height:28px;
+  }
 
-    .preview img, .preview video{
-      max-width:100%;
-      border-radius:10px;
-      border:1px solid #e5e7eb;
-    }
+  .pill{
+    padding:4px 8px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+    display:inline-block;
+  }
 
-    .footer{
-      margin-top:10px;
-      font-size:11px;
-      color:#555;
-      text-align:center;
-    }
-  </style>
+  .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
+  .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
+  .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
 
+  .preview{
+    margin-top:10px;
+    display:flex;
+    justify-content:center;
+  }
+
+  .preview img, .preview video{
+    max-width:100%;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+  }
+
+  .footer{
+    margin-top:10px;
+    font-size:11px;
+    color:#555;
+    text-align:center;
+  }
+</style>
 
 <header>Upload foto / video</header>
+
 <main>
-<p>LogoUltimaVersione.png</p>
+
+  <!-- ✅ LOGO INSERITO CORRETTAMENTE -->
+  <img src="LogoUltimaVersione.png" class="logo-img" alt="Logo Oplà">
+
   <div class="intro">Fondo Oplà • Pagina caricata</div>
+
   <div class="row-btn">
     <button id="btnPhoto" class="btn-photo">📸 Aggiungi foto</button>
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
   </div>
+
   <input id="inputPhoto" type="file" accept="image/*" style="display:none">
   <input id="inputVideo" type="file" accept="video/*" style="display:none">
+
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
+
   <div class="footer" id="version"></div>
+
 </main>
+
+
 <script>
 /* ✅ Versione reale */
-const VERSION = "v6.0-A";
+const VERSION = "v6.0-A+VIDEO";
 document.getElementById("version").textContent = VERSION;
 
 /* ✅ CONFIG ORIGINALE */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
-  MAX_VIDEO_MB: 15
+  MAX_VIDEO_MB: 25
 };
+
+const MAX_SECONDS = 10;
+const VIDEO_BITRATE = "900k";
 
 const $ = id => document.getElementById(id);
 
@@ -155,37 +176,56 @@ function setStatus(msg,type='ok'){
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
-/* PREVIEW */
+/* PREVIEW CORRETTA */
 function showPreview(file){
   const url = URL.createObjectURL(file);
   $('preview').innerHTML =
     file.type.startsWith("image/")
-      ? `${url}`
-      : `${url}</video>`;
-}
-
-/* FOTO */
-async function handlePhoto(file){
+      ? `<img src="${
   showPreview(file);
   setStatus("Caricamento foto…","warn");
   await performUpload(file);
 }
 
-/* VIDEO */
+/* ✅ VIDEO: compressione + conversione + limite 10s */
 async function handleVideo(file){
+
   if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
-  showPreview(file);
+  setStatus("Conversione video…","warn");
+
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log:false });
+
+  await ffmpeg.load();
+  ffmpeg.FS("writeFile","input.mp4", await fetchFile(file));
+
+  await ffmpeg.run(
+    "-i","input.mp4",
+    "-t", String(MAX_SECONDS),
+    "-vcodec","libx264",
+    "-preset","veryfast",
+    "-b:v", VIDEO_BITRATE,
+    "-acodec","aac",
+    "-b:a","96k",
+    "output.mp4"
+  );
+
+  const data = ffmpeg.FS("readFile","output.mp4");
+  const finalFile = new File([data.buffer],"video.mp4",{type:"video/mp4"});
+
+  showPreview(finalFile);
   setStatus("Caricamento video…","warn");
-  await performUpload(file);
+  await performUpload(finalFile);
 }
 
 /* UPLOAD */
 async function performUpload(file){
   const fd=new FormData();
-  fd.append("file",file,file.name);
+  fd.append("file", file, file.name);
   fd.append("metadata","{}");
+
   await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
   setStatus("✅ Operazione completata","ok");
 }
@@ -195,8 +235,4 @@ $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
 $('inputPhoto').addEventListener('change',e=>handlePhoto(e.target.files[0]));
 $('inputVideo').addEventListener('change',e=>handleVideo(e.target.files[0]));
-
 </script>
-
-
-```
