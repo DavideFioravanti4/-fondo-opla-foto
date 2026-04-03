@@ -176,10 +176,12 @@ function setStatus(msg,type='ok'){
 /* ✅ PREVIEW FUNZIONANTE */
 function showPreview(file){
   const url = URL.createObjectURL(file);
-  $('preview').innerHTML =
-    file.type.startsWith("image/")
-      ? `<img src="${url}">`
-      : `<video controls src="${url}"></video>`;
+
+  if(file.type.startsWith("image/")){
+    $('preview').innerHTML = `<img src="${url}" />`;
+  } else {
+    $('preview').innerHTML = `<video controls src="${url}"></video>`;
+  }
 }
 
 /* ✅ VIDEO (H.264 + compress+limit 10s) */
