@@ -1,139 +1,146 @@
-<!-- META -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Upload foto / video</title>
+<!doctype html>
+<html lang="it">
+<head>
 
-<!-- ✅ EXIF CORRETTO -->
-<script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
+  <!-- v5.7 – logo enorme nel box + ultra compatto -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 
-<!-- ✅ FFMPEG PER CONVERSIONE VIDEO -->
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
+  <title>Upload foto / video</title>
 
-<style>
-  :root{
-    --brand:#0b84f3;
-    --warn:#b7791f;
-    --bg:#eef4ff;
-  }
+  <!-- EXIF -->
+  https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js
 
-  html,body{
-    margin:0;
-    padding:0;
-    font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    background:var(--bg) url("sfondo.png") no-repeat center center fixed;
-    background-size:cover;
-    color:#111;
-  }
+  <style>
+    :root{
+      --brand:#0b84f3;
+      --warn:#b7791f;
+      --bg:#eef4ff;
+    }
 
-  header{
-    padding:14px;
-    background:linear-gradient(90deg, var(--brand), #6bb6ff);
-    color:#fff;
-    text-align:center;
-    font-size:19px;
-    font-weight:700;
-  }
+    html,body{
+      margin:0;
+      padding:0;
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:var(--bg) url("sfondo.png") no-repeat center center fixed;
+      background-size:cover;
+      color:#111;
+    }
 
-  main{
-    width:260px;
-    max-width:92%;
-    margin:12px auto;
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    padding:8px 10px 14px;
-    box-shadow:0 2px 12px rgba(0,0,0,.10);
-    text-align:center;
-  }
+    /* HEADER */
+    header{
+      padding:14px;
+      background:linear-gradient(90deg, var(--brand), #6bb6ff);
+      color:#fff;
+      text-align:center;
+      font-size:19px;
+      font-weight:700;
+    }
 
-  /* ✅ LOGO GRANDE */
-  .logo-img{
-    display:block;
-    margin:0 auto 12px;
-    width:300px;
-    height:auto;
-    max-width:90%;
-  }
+    /* BOX COMPATTO */
+    main{
+      width:260px;
+      max-width:92%;
+      margin:12px auto;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:8px 10px 14px;
+      box-shadow:0 2px 12px rgba(0,0,0,.10);
+      text-align:center;
+    }
 
-  .intro{
-    margin:0 0 10px;
-    color:#444;
-    font-size:15px;
-    font-weight:600;
-  }
+    /* LOGO GRANDE INSERITO COME IMMAGINE */
+    .logo-img{
+      display:block;
+      margin:0 auto 12px;
+      width:250px;         /* Grande */
+      height:auto;
+    }
 
-  .row-btn{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-    margin-top:6px;
-  }
+    .intro{
+      margin:0 0 10px;
+      color:#444;
+      font-size:15px;
+      font-weight:600;
+    }
 
-  button{
-    width:100%;
-    max-width:220px;
-    border:none;
-    border-radius:10px;
-    padding:10px 14px;
-    font-weight:700;
-    cursor:pointer;
-    font-size:15px;
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:6px;
-  }
+    /* Pulsanti in colonna */
+    .row-btn{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      margin-top:6px;
+    }
 
-  .btn-photo{ background:var(--brand); }
-  .btn-video{ background:var(--warn); }
+    button{
+      width:100%;
+      max-width:220px;
+      border:none;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:700;
+      cursor:pointer;
+      font-size:15px;
+      color:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:6px;
+    }
 
-  .status{
-    margin-top:8px;
-    min-height:28px;
-  }
+    .btn-photo{ background:var(--brand); }
+    .btn-video{ background:var(--warn); }
 
-  .pill{
-    padding:4px 8px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:600;
-    display:inline-block;
-  }
+    .status{
+      margin-top:8px;
+      min-height:28px;
+    }
 
-  .ok{background:#e8f7f1; color:#0c6b4e;}
-  .warn{background:#fff7e6; color:#8a6100;}
-  .err{background:#fde8e8; color:#7e1f1f;}
+    .pill{
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:600;
+      display:inline-block;
+    }
 
-  .preview{
-    margin-top:10px;
-    display:flex;
-    justify-content:center;
-  }
+    .ok{ background:#e8f7f1; color:#0c6b4e; border:1px solid #bfead9; }
+    .warn{ background:#fff7e6; color:#8a6100; border:1px solid #fde1a3; }
+    .err{ background:#fde8e8; color:#7e1f1f; border:1px solid #f3b4b4; }
 
-  .preview img, .preview video{
-    max-width:100%;
-    border-radius:10px;
-    border:1px solid #e5e7eb;
-  }
+    .preview{
+      margin-top:10px;
+      display:flex;
+      justify-content:center;
+    }
 
-  .footer{
-    margin-top:10px;
-    font-size:11px;
-    color:#555;
-    text-align:center;
-  }
-</style>
+    .preview img, .preview video{
+      max-width:100%;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
+    }
+
+    .footer{
+      margin-top:10px;
+      font-size:11px;
+      color:#555;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
 
 <header>Upload foto / video</header>
 
 <main>
 
-  <!-- ✅ LOGO -->
+  <!-- LOGO ENORME COME IMMAGINE -->
   LogoUltimaVersione.png
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
@@ -143,93 +150,155 @@
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
   </div>
 
-  <input id="inputPhoto" type="file" accept="image/*" style="display:none">
-  <input id="inputVideo" type="file" accept="video/*" style="display:none">
+  <input id="inputPhoto" type="file" accept="image/*" style="display:none"/>
+  <input id="inputVideo" type="file" accept="video/*" style="display:none"/>
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer" id="version"></div>
+  <div class="footer">v5.7</div>
 
 </main>
 
-
 <script>
-const VERSION = "v7.0";
-document.getElementById("version").textContent = VERSION;
-
+/* CONFIG */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
-  MAX_VIDEO_MB: 25
+  TARGET_MAX_BYTES:1*1024*1024,
+  TARGET_MAX_DIM:1600,
+  MAX_VIDEO_MB:15,
+  AUTO_REDIRECT_MS:900
 };
 
-const MAX_SECONDS = 10;
-const BITRATE = "900k";
-
 const $ = id => document.getElementById(id);
+const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
-/* STATUS */
 function setStatus(msg,type='ok'){
-  const c = type==='ok'?'pill ok':type==='warn'?'pill warn':'pill err';
-  $('status').innerHTML = `<span class="${c}">${msg}</span>`;
+  const c=type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
+  $('status').innerHTML=`<span class="${c}">${msg}</span>`;
 }
 
-/* PREVIEW CORRETTA */
 function showPreview(file){
-  const url = URL.createObjectURL(file);
-  $('preview').innerHTML =
-    file.type.startsWith("image/")
-      ? `<img srcunction handlePhoto(file){
-  showPreview(file);
-  setStatus("Caricamento foto…","warn");
-  await performUpload(file);
+  const url=URL.createObjectURL(file);
+  const p=$('preview');
+  p.innerHTML='';
+
+  if(file.type.startsWith("image/")){
+    const img=new Image();
+    img.onload=()=>URL.revokeObjectURL(url);
+    img.src=url;
+    p.appendChild(img);
+  } else {
+    const vid=document.createElement("video");
+    vid.src=url;
+    vid.controls=true;
+    vid.onloadeddata=()=>URL.revokeObjectURL(url);
+    p.appendChild(vid);
+  }
 }
 
-/* ✅ VIDEO → compressione + conversione + 10s */
-async function handleVideo(file){
-  if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
-    return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
+async function downscaleToJPEG(file){
+  try{
+    const bmp=await createImageBitmap(file);
+    const scale=Math.min(1,CONFIG.TARGET_MAX_DIM/Math.max(bmp.width,bmp.height));
+    const w=Math.round(bmp.width*scale);
+    const h=Math.round(bmp.height*scale);
 
-  setStatus("Conversione video…","warn");
+    const canvas=document.createElement("canvas");
+    canvas.width=w;
+    canvas.height=h;
+    canvas.getContext("2d").drawImage(bmp,0,0,w,h);
 
-  const { createFFmpeg, fetchFile } = FFmpeg;
-  const ffmpeg = createFFmpeg({log:false});
-  await ffmpeg.load();
+    let q=0.8;
+    let blob=await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
+    while(blob.size>CONFIG.TARGET_MAX_BYTES && q>0.4){
+      q-=0.1;
+      blob=await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
+    }
 
-  ffmpeg.FS("writeFile","input.mp4", await fetchFile(file));
-
-  await ffmpeg.run(
-    "-i","input.mp4",
-    "-t", String(MAX_SECONDS),
-    "-vcodec","libx264",
-    "-preset","veryfast",
-    "-b:v",BITRATE,
-    "-acodec","aac",
-    "-b:a","96k",
-    "output.mp4"
-  );
-
-  const data = ffmpeg.FS("readFile","output.mp4");
-  const finalFile = new File([data.buffer], "video.mp4",{type:"video/mp4"});
-
-  showPreview(finalFile);
-  setStatus("Caricamento video…","warn");
-  await performUpload(finalFile);
+    return new File([blob],"photo.jpg",{type:"image/jpeg"});
+  }catch(e){
+    return file;
+  }
 }
 
-/* UPLOAD */
-async function performUpload(file){
+async function extractGps(file){
+  try{
+    const gps=await exifr.gps(file);
+    if(gps?.latitude&&gps?.longitude) return gps;
+  }catch(e){}
+  return null;
+}
+
+async function performUpload(file,position,noGps){
   const fd=new FormData();
   fd.append("file",file,file.name);
-  fd.append("metadata","{}");
 
-  await fetch(CONFIG.FLOW_URL,{ method:"POST", body:fd });
-  setStatus("✅ Operazione completata","ok");
+  const uploadCode=crypto?.randomUUID?crypto.randomUUID():Date.now();
+
+  fd.append("metadata",JSON.stringify({
+    uploadCode,
+    proposalId:qs.proposalId||null,
+    position,
+    notes:noGps?"gps non disponibile":undefined
+  }));
+
+  $('btnPhoto').disabled=true;
+  $('btnVideo').disabled=true;
+  setStatus("Caricamento…","warn");
+
+  try{
+    const res=await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+
+    setStatus("File caricato. Reindirizzo…","ok");
+
+    if(qs.returnUrl){
+      const key="r2eaf878955164549a839a54cf37c9ea7";
+      const sep=qs.returnUrl.includes("?")?"&":"?";
+      setTimeout(()=>location.href=
+        `${qs.returnUrl}${sep}${key}=${uploadCode}`,
+      CONFIG.AUTO_REDIRECT_MS);
+    }
+
+  }catch(err){
+    setStatus("Errore: "+err.message,"err");
+    $('btnPhoto').disabled=false;
+    $('btnVideo').disabled=false;
+  }
 }
 
-/* EVENTI */
+async function handlePhoto(file){
+  if(!file) return;
+  showPreview(file);
+  setStatus("Verifico GPS…","warn");
+  const gps=await extractGps(file);
+  const slim=await downscaleToJPEG(file);
+  await performUpload(slim,gps,!gps);
+}
+
+async function handleVideo(file){
+  if(!file) return;
+  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
+    return setStatus(`Video troppo grande (>${CONFIG.MAX_VIDEO_MB}MB)`,"err");
+
+  showPreview(file);
+  await performUpload(file,null,false);
+}
+
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
-$('inputPhoto').addEventListener('change',e=>handlePhoto(e.target.files[0]));
-$('inputVideo').addEventListener('change',e=>handleVideo(e.target.files[0]));
+
+$('inputPhoto').addEventListener('change',e=>{
+  handlePhoto(e.target.files?.[0]);
+  e.target.value='';
+});
+
+$('inputVideo').addEventListener('change',e=>{
+  handleVideo(e.target.files?.[0]);
+});
 </script>
+
+</body>
+</html>
+
