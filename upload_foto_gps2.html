@@ -10,9 +10,6 @@
 
   <title>Upload foto / video</title>
 
-  <!-- EXIF -->
-  <script src="https://unpkg.com/exifr@7.1.3/dist/full.umd.min.js"></script>
-
   <style>
     :root{
       --brand:#0b84f3;
@@ -151,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v6.0</div>
+  <div class="footer">v6.1</div>
 
 </main>
 
@@ -222,26 +219,17 @@ async function downscaleToJPEG(file){
   }
 }
 
-/* ✅ EXIF/GPS */
-async function extractGps(file){
-  try{
-    const gps = await exifr.gps(file);
-    if(gps?.latitude && gps?.longitude) return gps;
-  }catch{}
-  return null;
-}
-
-/* ✅ Fix 502 — 1 solo file “file”, gli altri in metadata base64 */
-async function performUpload({fileOriginal,fileSlim,videoFile,position,noGps}){
+/* ✅ Upload senza GPS */
+async function performUpload({fileOriginal,fileSlim,videoFile}){
 
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  // ✅ il Flow si aspetta SOLO questo campo
+  // ✅ Power Automate accetta 1 solo campo "file"
   const mainFile = fileOriginal || videoFile || fileSlim;
   fd.append("file", mainFile, mainFile.name);
 
-  // conversione base64
+  // ✅ altri file → base64 in metadata
   async function toBase64(f){
     if(!f) return null;
     const buf = await f.arrayBuffer();
@@ -251,8 +239,6 @@ async function performUpload({fileOriginal,fileSlim,videoFile,position,noGps}){
   const meta = {
     uploadCode,
     proposalId: qs.proposalId || null,
-    position,
-    notes: noGps ? "gps non disponibile" : undefined,
     photoOriginal_b64: fileOriginal && fileOriginal !== mainFile ? await toBase64(fileOriginal) : null,
     photoSlim_b64: fileSlim && fileSlim !== mainFile ? await toBase64(fileSlim) : null
   };
@@ -289,18 +275,14 @@ async function handlePhoto(file){
   if(!file) return;
 
   showPreview(file);
-
-  setStatus("Verifico GPS…","warn");
-  const gps = await extractGps(file);
+  setStatus("Foto ricevuta, preparo…","warn");
 
   const slim = await downscaleToJPEG(file);
 
   await performUpload({
     fileOriginal:file,
     fileSlim:slim,
-    videoFile:null,
-    position:gps,
-    noGps:!gps
+    videoFile:null
   });
 }
 
@@ -337,9 +319,7 @@ async function handleVideo(file){
   await performUpload({
     fileOriginal:null,
     fileSlim:null,
-    videoFile:file,
-    position:null,
-    noGps:false
+    videoFile:file
   });
 }
 
