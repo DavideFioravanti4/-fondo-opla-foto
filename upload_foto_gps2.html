@@ -2,7 +2,6 @@
 <html lang="it">
 <head>
 
-  <!-- v5.8 – Soluzione A + Timer video + doppio upload foto -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -30,7 +29,6 @@
       color:#111;
     }
 
-    /* HEADER */
     header{
       padding:14px;
       background:linear-gradient(90deg, var(--brand), #6bb6ff);
@@ -40,7 +38,6 @@
       font-weight:700;
     }
 
-    /* BOX COMPATTO */
     main{
       width:260px;
       max-width:92%;
@@ -53,7 +50,6 @@
       text-align:center;
     }
 
-    /* Logo grande */
     .logo-img{
       display:block;
       margin:0 auto 18px;
@@ -69,7 +65,6 @@
       font-weight:600;
     }
 
-    /* Pulsanti in colonna */
     .row-btn{
       display:flex;
       flex-direction:column;
@@ -141,7 +136,6 @@
 
 <main>
 
-  <!-- LOGO -->
   <img src="LogoUltimaVersione.png" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
@@ -157,7 +151,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v5.8</div>
+  <div class="footer">v6.0</div>
 
 </main>
 
@@ -202,6 +196,7 @@ function showPreview(file){
   }
 }
 
+/* ✅ compressione foto */
 async function downscaleToJPEG(file){
   try{
     const bmp = await createImageBitmap(file);
@@ -215,10 +210,10 @@ async function downscaleToJPEG(file){
     canvas.getContext("2d").drawImage(bmp,0,0,w,h);
 
     let q = 0.8;
-    let blob = await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
-    while(blob.size > CONFIG.TARGET_MAX_BYTES && q>0.4){
+    let blob = await new Promise(r => canvas.toBlob(r,"image/jpeg",q));
+    while(blob.size > CONFIG.TARGET_MAX_BYTES && q > 0.4){
       q -= 0.1;
-      blob = await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
+      blob = await new Promise(r => canvas.toBlob(r,"image/jpeg",q));
     }
 
     return new File([blob], "photoSlim.jpg", {type:"image/jpeg"});
@@ -227,6 +222,7 @@ async function downscaleToJPEG(file){
   }
 }
 
+/* ✅ EXIF/GPS */
 async function extractGps(file){
   try{
     const gps = await exifr.gps(file);
@@ -235,27 +231,40 @@ async function extractGps(file){
   return null;
 }
 
+/* ✅ Fix 502 — 1 solo file “file”, gli altri in metadata base64 */
 async function performUpload({fileOriginal,fileSlim,videoFile,position,noGps}){
+
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  if(fileOriginal) fd.append("photoOriginal", fileOriginal, fileOriginal.name);
-  if(fileSlim)     fd.append("photoSlim", fileSlim,     fileSlim.name);
-  if(videoFile)    fd.append("video",     videoFile,    videoFile.name);
+  // ✅ il Flow si aspetta SOLO questo campo
+  const mainFile = fileOriginal || videoFile || fileSlim;
+  fd.append("file", mainFile, mainFile.name);
 
-  fd.append("metadata", JSON.stringify({
+  // conversione base64
+  async function toBase64(f){
+    if(!f) return null;
+    const buf = await f.arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  }
+
+  const meta = {
     uploadCode,
     proposalId: qs.proposalId || null,
     position,
-    notes: noGps ? "gps non disponibile" : undefined
-  }));
+    notes: noGps ? "gps non disponibile" : undefined,
+    photoOriginal_b64: fileOriginal && fileOriginal !== mainFile ? await toBase64(fileOriginal) : null,
+    photoSlim_b64: fileSlim && fileSlim !== mainFile ? await toBase64(fileSlim) : null
+  };
 
-  $('btnPhoto').disabled = true;
-  $('btnVideo').disabled = true;
-  setStatus("Caricamento…", "warn");
+  fd.append("metadata", JSON.stringify(meta));
+
+  $('btnPhoto').disabled=true;
+  $('btnVideo').disabled=true;
+  setStatus("Caricamento…","warn");
 
   try{
-    const res = await fetch(CONFIG.FLOW_URL,{method:"POST", body:fd});
+    const res = await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
     if(!res.ok) throw new Error("HTTP "+res.status);
 
     setStatus("File caricato. Reindirizzo…","ok");
@@ -264,17 +273,18 @@ async function performUpload({fileOriginal,fileSlim,videoFile,position,noGps}){
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
       setTimeout(()=>location.href =
-         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
-          CONFIG.AUTO_REDIRECT_MS);
+        `${qs.returnUrl}${sep}${key}=${uploadCode}`,
+      CONFIG.AUTO_REDIRECT_MS);
     }
-
-  }catch(err){
+  }
+  catch(err){
     setStatus("Errore: "+err.message,"err");
     $('btnPhoto').disabled=false;
     $('btnVideo').disabled=false;
   }
 }
 
+/* ✅ gestione foto */
 async function handlePhoto(file){
   if(!file) return;
 
@@ -294,23 +304,24 @@ async function handlePhoto(file){
   });
 }
 
+/* ✅ controllo durata video */
 function checkVideoDuration(file){
   return new Promise(resolve=>{
-    const v = document.createElement("video");
-    v.preload = "metadata";
-    v.src = URL.createObjectURL(file);
-
-    v.onloadedmetadata = ()=>{
+    const v=document.createElement("video");
+    v.preload="metadata";
+    v.src=URL.createObjectURL(file);
+    v.onloadedmetadata=()=>{
       URL.revokeObjectURL(v.src);
       resolve(v.duration);
     };
   });
 }
 
+/* ✅ gestione video */
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB * 1024*1024)
+  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
@@ -319,10 +330,7 @@ async function handleVideo(file){
   const duration = await checkVideoDuration(file);
 
   if(duration > CONFIG.MAX_VIDEO_SECONDS)
-    return setStatus(
-      `Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS} secondi)`,
-      "err"
-    );
+    return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
 
   setStatus("Video valido, invio…","ok");
 
@@ -335,9 +343,9 @@ async function handleVideo(file){
   });
 }
 
-/* Eventi */
-$('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
-$('btnVideo').addEventListener('click',()=> $('inputVideo').click());
+/* EVENTI */
+$('btnPhoto').addEventListener('click',()=>$('inputPhoto').click());
+$('btnVideo').addEventListener('click',()=>$('inputVideo').click());
 
 $('inputPhoto').addEventListener('change',e=>{
   handlePhoto(e.target.files?.[0]);
