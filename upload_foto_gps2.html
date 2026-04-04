@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 
-  <!-- v5.7 – logo enorme nel box + ultra compatto -->
+  <!-- v5.8 – Soluzione A + Timer video + doppio upload foto -->
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -53,7 +53,7 @@
       text-align:center;
     }
 
-    /* ✅ LOGO MOLTO GRANDE E CENTRALE */
+    /* Logo grande */
     .logo-img{
       display:block;
       margin:0 auto 18px;
@@ -141,7 +141,7 @@
 
 <main>
 
-  <!-- ✅ LOGO GRANDE E CENTRALE -->
+  <!-- LOGO -->
   <img src="LogoUltimaVersione.png" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
@@ -157,7 +157,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v5.7</div>
+  <div class="footer">v5.8</div>
 
 </main>
 
@@ -165,9 +165,13 @@
 /* CONFIG */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
+
   TARGET_MAX_BYTES:1*1024*1024,
   TARGET_MAX_DIM:1600,
+
   MAX_VIDEO_MB:15,
+  MAX_VIDEO_SECONDS:20,
+
   AUTO_REDIRECT_MS:900
 };
 
@@ -175,91 +179,93 @@ const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
 function setStatus(msg,type='ok'){
-  const c=type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
-  $('status').innerHTML=`<span class="${c}">${msg}</span>`;
+  const c = type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
+  $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
 function showPreview(file){
-  const url=URL.createObjectURL(file);
-  const p=$('preview');
-  p.innerHTML='';
+  const url = URL.createObjectURL(file);
+  const p = $('preview');
+  p.innerHTML = '';
 
   if(file.type.startsWith("image/")){
-    const img=new Image();
-    img.onload=()=>URL.revokeObjectURL(url);
-    img.src=url;
+    const img = new Image();
+    img.onload = () => URL.revokeObjectURL(url);
+    img.src = url;
     p.appendChild(img);
   } else {
-    const vid=document.createElement("video");
-    vid.src=url;
-    vid.controls=true;
-    vid.onloadeddata=()=>URL.revokeObjectURL(url);
+    const vid = document.createElement("video");
+    vid.controls = true;
+    vid.src = url;
+    vid.onloadeddata = () => URL.revokeObjectURL(url);
     p.appendChild(vid);
   }
 }
 
 async function downscaleToJPEG(file){
   try{
-    const bmp=await createImageBitmap(file);
-    const scale=Math.min(1,CONFIG.TARGET_MAX_DIM/Math.max(bmp.width,bmp.height));
-    const w=Math.round(bmp.width*scale);
-    const h=Math.round(bmp.height*scale);
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, CONFIG.TARGET_MAX_DIM / Math.max(bmp.width,bmp.height));
+    const w = Math.round(bmp.width*scale);
+    const h = Math.round(bmp.height*scale);
 
-    const canvas=document.createElement("canvas");
-    canvas.width=w;
-    canvas.height=h;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
     canvas.getContext("2d").drawImage(bmp,0,0,w,h);
 
-    let q=0.8;
-    let blob=await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
-    while(blob.size>CONFIG.TARGET_MAX_BYTES && q>0.4){
-      q-=0.1;
-      blob=await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
+    let q = 0.8;
+    let blob = await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
+    while(blob.size > CONFIG.TARGET_MAX_BYTES && q>0.4){
+      q -= 0.1;
+      blob = await new Promise(r=>canvas.toBlob(r,"image/jpeg",q));
     }
 
-    return new File([blob],"photo.jpg",{type:"image/jpeg"});
-  }catch(e){
+    return new File([blob], "photoSlim.jpg", {type:"image/jpeg"});
+  } catch {
     return file;
   }
 }
 
 async function extractGps(file){
   try{
-    const gps=await exifr.gps(file);
-    if(gps?.latitude&&gps?.longitude) return gps;
-  }catch(e){}
+    const gps = await exifr.gps(file);
+    if(gps?.latitude && gps?.longitude) return gps;
+  }catch{}
   return null;
 }
 
-async function performUpload(file,position,noGps){
-  const fd=new FormData();
-  fd.append("file",file,file.name);
+async function performUpload({fileOriginal,fileSlim,videoFile,position,noGps}){
+  const fd = new FormData();
+  const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  const uploadCode=crypto?.randomUUID?crypto.randomUUID():Date.now();
+  if(fileOriginal) fd.append("photoOriginal", fileOriginal, fileOriginal.name);
+  if(fileSlim)     fd.append("photoSlim", fileSlim,     fileSlim.name);
+  if(videoFile)    fd.append("video",     videoFile,    videoFile.name);
 
-  fd.append("metadata",JSON.stringify({
+  fd.append("metadata", JSON.stringify({
     uploadCode,
-    proposalId:qs.proposalId||null,
+    proposalId: qs.proposalId || null,
     position,
-    notes:noGps?"gps non disponibile":undefined
+    notes: noGps ? "gps non disponibile" : undefined
   }));
 
-  $('btnPhoto').disabled=true;
-  $('btnVideo').disabled=true;
-  setStatus("Caricamento…","warn");
+  $('btnPhoto').disabled = true;
+  $('btnVideo').disabled = true;
+  setStatus("Caricamento…", "warn");
 
   try{
-    const res=await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+    const res = await fetch(CONFIG.FLOW_URL,{method:"POST", body:fd});
     if(!res.ok) throw new Error("HTTP "+res.status);
 
     setStatus("File caricato. Reindirizzo…","ok");
 
     if(qs.returnUrl){
       const key="r2eaf878955164549a839a54cf37c9ea7";
-      const sep=qs.returnUrl.includes("?")?"&":"?";
-      setTimeout(()=>location.href=
-        `${qs.returnUrl}${sep}${key}=${uploadCode}`,
-      CONFIG.AUTO_REDIRECT_MS);
+      const sep = qs.returnUrl.includes("?") ? "&" : "?";
+      setTimeout(()=>location.href =
+         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
+          CONFIG.AUTO_REDIRECT_MS);
     }
 
   }catch(err){
@@ -271,22 +277,65 @@ async function performUpload(file,position,noGps){
 
 async function handlePhoto(file){
   if(!file) return;
+
   showPreview(file);
+
   setStatus("Verifico GPS…","warn");
-  const gps=await extractGps(file);
-  const slim=await downscaleToJPEG(file);
-  await performUpload(slim,gps,!gps);
+  const gps = await extractGps(file);
+
+  const slim = await downscaleToJPEG(file);
+
+  await performUpload({
+    fileOriginal:file,
+    fileSlim:slim,
+    videoFile:null,
+    position:gps,
+    noGps:!gps
+  });
+}
+
+function checkVideoDuration(file){
+  return new Promise(resolve=>{
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.src = URL.createObjectURL(file);
+
+    v.onloadedmetadata = ()=>{
+      URL.revokeObjectURL(v.src);
+      resolve(v.duration);
+    };
+  });
 }
 
 async function handleVideo(file){
   if(!file) return;
-  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
-    return setStatus(`Video troppo grande (>${CONFIG.MAX_VIDEO_MB}MB)`,"err");
+
+  if(file.size > CONFIG.MAX_VIDEO_MB * 1024*1024)
+    return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
-  await performUpload(file,null,false);
+  setStatus("Analizzo durata video…","warn");
+
+  const duration = await checkVideoDuration(file);
+
+  if(duration > CONFIG.MAX_VIDEO_SECONDS)
+    return setStatus(
+      `Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS} secondi)`,
+      "err"
+    );
+
+  setStatus("Video valido, invio…","ok");
+
+  await performUpload({
+    fileOriginal:null,
+    fileSlim:null,
+    videoFile:file,
+    position:null,
+    noGps:false
+  });
 }
 
+/* Eventi */
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
 
