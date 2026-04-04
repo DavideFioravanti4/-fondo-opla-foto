@@ -148,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v7.0</div>
+  <div class="footer">v9.0</div>
 
 </main>
 
@@ -157,13 +157,8 @@
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
 
-  MAX_W: 1600,        // ✅ ridimensionamento sicuro (foto originali fino a 12–20MB)
-  MAX_H: 1600,
-  TARGET_QUALITY: 0.75,
-
   MAX_VIDEO_MB:15,
   MAX_VIDEO_SECONDS:20,
-
   AUTO_REDIRECT_MS:900
 };
 
@@ -194,57 +189,16 @@ function showPreview(file){
   }
 }
 
-/* ✅ compressione foto compatibile con TUTTI i telefoni */
-async function compressImage(file){
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-
-      let w = img.width;
-      let h = img.height;
-
-      const scale = Math.min(CONFIG.MAX_W / w, CONFIG.MAX_H / h, 1);
-      w *= scale;
-      h *= scale;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, w, h);
-
-      canvas.toBlob(
-        blob => resolve(new File([blob], "photoSlim.jpg", {type:"image/jpeg"})),
-        "image/jpeg",
-        CONFIG.TARGET_QUALITY
-      );
-    };
-
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-/* ✅ Upload stabile, 1 file + base64 */
-async function performUpload({fileOriginal,fileSlim,videoFile}){
-
+/* ✅ UPLOAD DIRETTO (foto o video) */
+async function performUpload(file){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  const mainFile = fileOriginal || videoFile || fileSlim;
-  fd.append("file", mainFile, mainFile.name);
-
-  async function toBase64(f){
-    if(!f) return null;
-    const buf = await f.arrayBuffer();
-    return btoa(String.fromCharCode(...new Uint8Array(buf)));
-  }
+  fd.append("file", file, file.name);
 
   fd.append("metadata", JSON.stringify({
     uploadCode,
-    proposalId: qs.proposalId || null,
-    photoOriginal_b64: fileOriginal && fileOriginal !== mainFile ? await toBase64(fileOriginal) : null,
-    photoSlim_b64: fileSlim && fileSlim !== mainFile ? await toBase64(fileSlim) : null
+    proposalId: qs.proposalId || null
   }));
 
   $('btnPhoto').disabled = true;
@@ -267,8 +221,8 @@ async function performUpload({fileOriginal,fileSlim,videoFile}){
   }
   catch(err){
     setStatus("Errore: "+err.message,"err");
-    $('btnPhoto').disabled=false;
-    $('btnVideo').disabled=false;
+    $('btnPhoto').disabled = false;
+    $('btnVideo').disabled = false;
   }
 }
 
@@ -277,15 +231,9 @@ async function handlePhoto(file){
   if(!file) return;
 
   showPreview(file);
-  setStatus("Foto ricevuta, preparo…","warn");
+  setStatus("Invio foto…","warn");
 
-  const slim = await compressImage(file);
-
-  await performUpload({
-    fileOriginal:file,
-    fileSlim:slim,
-    videoFile:null
-  });
+  await performUpload(file);
 }
 
 /* ✅ VIDEO */
@@ -304,24 +252,20 @@ function checkVideoDuration(file){
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB * 1024*1024)
+  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
-  setStatus("Analizzo durata video…","warn");
+  setStatus("Analizzo durata…","warn");
 
   const duration = await checkVideoDuration(file);
 
   if(duration > CONFIG.MAX_VIDEO_SECONDS)
     return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
 
-  setStatus("Video valido, invio…","ok");
+  setStatus("Invio video…","ok");
 
-  await performUpload({
-    fileOriginal:null,
-    fileSlim:null,
-    videoFile:file
-  });
+  await performUpload(file);
 }
 
 /* EVENTI */
