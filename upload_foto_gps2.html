@@ -148,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v9.5</div>
+  <div class="footer">v10.0</div>
 
 </main>
 
@@ -156,17 +156,17 @@
 /* CONFIG */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
-  
-  MAX_VIDEO_MB:300,          // ✅ 300 MB
-  MAX_VIDEO_SECONDS:600,     // ✅ 10 minuti
+
+  MAX_VIDEO_MB:300,
+  MAX_VIDEO_SECONDS:600,
   AUTO_REDIRECT_MS:900
 };
 
 const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
-function setStatus(msg, type='ok'){
-  const c = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
+function setStatus(msg,type='ok'){
+  const c = type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
@@ -189,12 +189,12 @@ function showPreview(file){
   }
 }
 
-/* ✅ CARICAMENTO UNICO (foto o video) */
+/* ✅ UPLOAD PERFETTAMENTE ALLINEATO AL TUO FLOW */
 async function performUpload(file){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  /* ✅ IL TUO FLOW SI ASPETTA SOLO QUESTO */
+  /* ✅ IL TUO FLOW SI ASPETTA QUESTO E SOLO QUESTO */
   fd.append("file", file);
 
   fd.append("metadata", JSON.stringify({
@@ -206,24 +206,26 @@ async function performUpload(file){
   $('btnVideo').disabled = true;
   setStatus("Caricamento…","warn");
 
-  try {
-    const res = await fetch(CONFIG.FLOW_URL, { method:"POST", body:fd });
+  try{
+    const res = await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+
     if(!res.ok) throw new Error("HTTP "+res.status);
 
     setStatus("File caricato. Reindirizzo…","ok");
 
     if(qs.returnUrl){
-      const sep = qs.returnUrl.includes("?") ? "&" : "?";
       const key="r2eaf878955164549a839a54cf37c9ea7";
-      setTimeout(()=> location.href =
+      const sep = qs.returnUrl.includes("?") ? "&" : "?";
+
+      setTimeout(()=>location.href =
         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
       CONFIG.AUTO_REDIRECT_MS);
     }
 
-  } catch(err){
-    setStatus("Errore: " + err.message, "err");
-    $('btnPhoto').disabled = false;
-    $('btnVideo').disabled = false;
+  }catch(err){
+    setStatus("Errore: "+err.message,"err");
+    $('btnPhoto').disabled=false;
+    $('btnVideo').disabled=false;
   }
 }
 
@@ -251,16 +253,18 @@ function checkVideoDuration(file){
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
+  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
 
   const duration = await checkVideoDuration(file);
+
   if(duration > CONFIG.MAX_VIDEO_SECONDS)
     return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
 
   setStatus("Invio video…","ok");
+
   performUpload(file);
 }
 
@@ -268,12 +272,12 @@ async function handleVideo(file){
 $('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
 $('btnVideo').addEventListener('click',()=> $('inputVideo').click());
 
-$('inputPhoto').addEventListener('change', e=>{
+$('inputPhoto').addEventListener('change',e=>{
   handlePhoto(e.target.files?.[0]);
   e.target.value='';
 });
 
-$('inputVideo').addEventListener('change', e=>{
+$('inputVideo').addEventListener('change',e=>{
   handleVideo(e.target.files?.[0]);
   e.target.value='';
 });
