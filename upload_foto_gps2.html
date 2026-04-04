@@ -148,17 +148,17 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v9.2</div>
+  <div class="footer">v9.4</div>
 
 </main>
 
 <script>
-/* CONFIG */
+/* CONFIG - video allungati */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
 
-  MAX_VIDEO_MB:200,         // aumentato
-  MAX_VIDEO_SECONDS:180,    // aumentato
+  MAX_VIDEO_MB:300,          // ← aumentato
+  MAX_VIDEO_SECONDS:600,     // ← 10 minuti
   AUTO_REDIRECT_MS:900
 };
 
@@ -166,7 +166,7 @@ const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
 function setStatus(msg,type='ok'){
-  const c = type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
+  const c = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
@@ -177,29 +177,27 @@ function showPreview(file){
 
   if(file.type.startsWith("image/")){
     const img = new Image();
-    img.onload = () => URL.revokeObjectURL(url);
+    img.onload = ()=>URL.revokeObjectURL(url);
     img.src = url;
     p.appendChild(img);
   } else {
     const vid = document.createElement("video");
     vid.controls = true;
     vid.src = url;
-    vid.onloadeddata = () => URL.revokeObjectURL(url);
+    vid.onloadeddata = ()=>URL.revokeObjectURL(url);
     p.appendChild(vid);
   }
 }
 
-/* ✅ FUNZIONE UNICA DI UPLOAD */
-async function performUpload(file, kind){
+/* ✅ L'UNICO UPLOAD ACCETTATO DAL TUO FLOW */
+async function performUpload(file){
   const fd = new FormData();
-  const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
+  const uploadCode = crypto.randomUUID();
 
-  /* ✅ UNICA CHIAVE FILE, COME NEL FLOW ORIGINALE */
-  fd.append("file", file);   
+  /* ✅ IL TUO FLOW SI ASPETTA SOLO QUESTO */
+  fd.append("file", file);
 
-  /* ✅ SPECIFICHIAMO IL TIPO (foto o video) */
-  fd.append("kind", kind);
-
+  /* ✅ Metadata JSON (il Flow già lo gestisce) */
   fd.append("metadata", JSON.stringify({
     uploadCode,
     proposalId: qs.proposalId || null
@@ -210,7 +208,8 @@ async function performUpload(file, kind){
   setStatus("Caricamento…","warn");
 
   try{
-    const res = await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+    const res = await fetch(CONFIG.FLOW_URL, { method:"POST", body:fd });
+
     if(!res.ok) throw new Error("HTTP "+res.status);
 
     setStatus("File caricato. Reindirizzo…","ok");
@@ -218,13 +217,12 @@ async function performUpload(file, kind){
     if(qs.returnUrl){
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
-
-      setTimeout(()=>location.href =
+      setTimeout(()=> location.href =
         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
       CONFIG.AUTO_REDIRECT_MS);
     }
-  }
-  catch(err){
+
+  } catch(err){
     setStatus("Errore: "+err.message,"err");
     $('btnPhoto').disabled = false;
     $('btnVideo').disabled = false;
@@ -236,7 +234,7 @@ function handlePhoto(file){
   if(!file) return;
   showPreview(file);
   setStatus("Invio foto…","warn");
-  performUpload(file, "photo");
+  performUpload(file);
 }
 
 /* ✅ VIDEO */
@@ -259,7 +257,6 @@ async function handleVideo(file){
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
-  setStatus("Analizzo durata…","warn");
 
   const duration = await checkVideoDuration(file);
 
@@ -267,19 +264,19 @@ async function handleVideo(file){
     return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
 
   setStatus("Invio video…","ok");
-  performUpload(file, "video");
+  performUpload(file);
 }
 
 /* EVENTI */
-$('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
-$('btnVideo').addEventListener('click',()=> $('inputVideo').click());
+$('btnPhoto').addEventListener('click', ()=> $('inputPhoto').click());
+$('btnVideo').addEventListener('click', ()=> $('inputVideo').click());
 
-$('inputPhoto').addEventListener('change',e=>{
+$('inputPhoto').addEventListener('change', e=>{
   handlePhoto(e.target.files?.[0]);
   e.target.value='';
 });
 
-$('inputVideo').addEventListener('change',e=>{
+$('inputVideo').addEventListener('change', e=>{
   handleVideo(e.target.files?.[0]);
   e.target.value='';
 });
@@ -287,3 +284,4 @@ $('inputVideo').addEventListener('change',e=>{
 
 </body>
 </html>
+``
