@@ -148,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v10.0</div>
+  <div class="footer">v10.1</div>
 
 </main>
 
@@ -165,8 +165,8 @@ const CONFIG = {
 const $ = id => document.getElementById(id);
 const qs = Object.fromEntries(new URLSearchParams(location.search).entries());
 
-function setStatus(msg,type='ok'){
-  const c = type==='ok'?'pill ok':type==='err'?'pill err':'pill warn';
+function setStatus(msg, type='ok'){
+  const c = type==='ok' ? 'pill ok' : type==='err' ? 'pill err' : 'pill warn';
   $('status').innerHTML = `<span class="${c}">${msg}</span>`;
 }
 
@@ -189,14 +189,15 @@ function showPreview(file){
   }
 }
 
-/* ✅ UPLOAD PERFETTAMENTE ALLINEATO AL TUO FLOW */
+/* ✅ FUNZIONE DI UPLOAD CORRETTA — FILE PRIMA DI METADATA */
 async function performUpload(file){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  /* ✅ IL TUO FLOW SI ASPETTA QUESTO E SOLO QUESTO */
+  /* ✅ IL FILE DEVE ESSERE IL PRIMO CAMPO */
   fd.append("file", file);
 
+  /* ✅ metadata DOPO il campo file */
   fd.append("metadata", JSON.stringify({
     uploadCode,
     proposalId: qs.proposalId || null
@@ -204,12 +205,15 @@ async function performUpload(file){
 
   $('btnPhoto').disabled = true;
   $('btnVideo').disabled = true;
-  setStatus("Caricamento…","warn");
+  setStatus("Caricamento…", "warn");
 
   try{
-    const res = await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
+    const res = await fetch(CONFIG.FLOW_URL, {
+      method:"POST",
+      body:fd
+    });
 
-    if(!res.ok) throw new Error("HTTP "+res.status);
+    if(!res.ok) throw new Error("HTTP " + res.status);
 
     setStatus("File caricato. Reindirizzo…","ok");
 
@@ -217,15 +221,16 @@ async function performUpload(file){
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
 
-      setTimeout(()=>location.href =
+      setTimeout(()=> location.href =
         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
-      CONFIG.AUTO_REDIRECT_MS);
+        CONFIG.AUTO_REDIRECT_MS
+      );
     }
 
-  }catch(err){
-    setStatus("Errore: "+err.message,"err");
-    $('btnPhoto').disabled=false;
-    $('btnVideo').disabled=false;
+  } catch(err){
+    setStatus("Errore: " + err.message, "err");
+    $('btnPhoto').disabled = false;
+    $('btnVideo').disabled = false;
   }
 }
 
@@ -253,31 +258,36 @@ function checkVideoDuration(file){
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
-    return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
+  if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
+    return setStatus(
+      `Video troppo grande (> ${CONFIG.MAX_VIDEO_MB} MB)`,
+      "err"
+    );
 
   showPreview(file);
 
   const duration = await checkVideoDuration(file);
 
   if(duration > CONFIG.MAX_VIDEO_SECONDS)
-    return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
+    return setStatus(
+      `Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS} s)`,
+      "err"
+    );
 
   setStatus("Invio video…","ok");
-
   performUpload(file);
 }
 
 /* EVENTI */
-$('btnPhoto').addEventListener('click',()=> $('inputPhoto').click());
-$('btnVideo').addEventListener('click',()=> $('inputVideo').click());
+$('btnPhoto').addEventListener('click', ()=> $('inputPhoto').click());
+$('btnVideo').addEventListener('click', ()=> $('inputVideo').click());
 
-$('inputPhoto').addEventListener('change',e=>{
+$('inputPhoto').addEventListener('change', e=>{
   handlePhoto(e.target.files?.[0]);
   e.target.value='';
 });
 
-$('inputVideo').addEventListener('change',e=>{
+$('inputVideo').addEventListener('change', e=>{
   handleVideo(e.target.files?.[0]);
   e.target.value='';
 });
