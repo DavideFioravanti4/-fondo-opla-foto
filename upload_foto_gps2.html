@@ -148,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v9.0</div>
+  <div class="footer">v9.1</div>
 
 </main>
 
@@ -189,12 +189,13 @@ function showPreview(file){
   }
 }
 
-/* ✅ UPLOAD DIRETTO (foto o video) */
+/* ✅ UPLOAD DIRETTO (foto o video) – FIXATO */
 async function performUpload(file){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  fd.append("file", file, file.name);
+  /* ✅ FIX 1 — torna come la versione originale funzionante */
+  fd.append("file", file);   // ← rimosso il terzo parametro che corrompeva i file
 
   fd.append("metadata", JSON.stringify({
     uploadCode,
@@ -212,8 +213,10 @@ async function performUpload(file){
     setStatus("File caricato. Reindirizzo…","ok");
 
     if(qs.returnUrl){
+      /* ✅ FIX 2 — niente &amp; */
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
+
       setTimeout(()=>location.href =
         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
       CONFIG.AUTO_REDIRECT_MS);
