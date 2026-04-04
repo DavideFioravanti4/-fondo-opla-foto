@@ -148,7 +148,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v6.1</div>
+  <div class="footer">v7.0</div>
 
 </main>
 
@@ -157,8 +157,9 @@
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
 
-  TARGET_MAX_BYTES:1*1024*1024,
-  TARGET_MAX_DIM:1600,
+  MAX_W: 1600,        // ✅ ridimensionamento sicuro (foto originali fino a 12–20MB)
+  MAX_H: 1600,
+  TARGET_QUALITY: 0.75,
 
   MAX_VIDEO_MB:15,
   MAX_VIDEO_SECONDS:20,
@@ -193,60 +194,61 @@ function showPreview(file){
   }
 }
 
-/* ✅ compressione foto */
-async function downscaleToJPEG(file){
-  try{
-    const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, CONFIG.TARGET_MAX_DIM / Math.max(bmp.width,bmp.height));
-    const w = Math.round(bmp.width*scale);
-    const h = Math.round(bmp.height*scale);
+/* ✅ compressione foto compatibile con TUTTI i telefoni */
+async function compressImage(file){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
 
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    canvas.getContext("2d").drawImage(bmp,0,0,w,h);
+      let w = img.width;
+      let h = img.height;
 
-    let q = 0.8;
-    let blob = await new Promise(r => canvas.toBlob(r,"image/jpeg",q));
-    while(blob.size > CONFIG.TARGET_MAX_BYTES && q > 0.4){
-      q -= 0.1;
-      blob = await new Promise(r => canvas.toBlob(r,"image/jpeg",q));
-    }
+      const scale = Math.min(CONFIG.MAX_W / w, CONFIG.MAX_H / h, 1);
+      w *= scale;
+      h *= scale;
 
-    return new File([blob], "photoSlim.jpg", {type:"image/jpeg"});
-  } catch {
-    return file;
-  }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+
+      canvas.toBlob(
+        blob => resolve(new File([blob], "photoSlim.jpg", {type:"image/jpeg"})),
+        "image/jpeg",
+        CONFIG.TARGET_QUALITY
+      );
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
 }
 
-/* ✅ Upload senza GPS */
+/* ✅ Upload stabile, 1 file + base64 */
 async function performUpload({fileOriginal,fileSlim,videoFile}){
 
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  // ✅ Power Automate accetta 1 solo campo "file"
   const mainFile = fileOriginal || videoFile || fileSlim;
   fd.append("file", mainFile, mainFile.name);
 
-  // ✅ altri file → base64 in metadata
   async function toBase64(f){
     if(!f) return null;
     const buf = await f.arrayBuffer();
     return btoa(String.fromCharCode(...new Uint8Array(buf)));
   }
 
-  const meta = {
+  fd.append("metadata", JSON.stringify({
     uploadCode,
     proposalId: qs.proposalId || null,
     photoOriginal_b64: fileOriginal && fileOriginal !== mainFile ? await toBase64(fileOriginal) : null,
     photoSlim_b64: fileSlim && fileSlim !== mainFile ? await toBase64(fileSlim) : null
-  };
+  }));
 
-  fd.append("metadata", JSON.stringify(meta));
-
-  $('btnPhoto').disabled=true;
-  $('btnVideo').disabled=true;
+  $('btnPhoto').disabled = true;
+  $('btnVideo').disabled = true;
   setStatus("Caricamento…","warn");
 
   try{
@@ -270,14 +272,14 @@ async function performUpload({fileOriginal,fileSlim,videoFile}){
   }
 }
 
-/* ✅ gestione foto */
+/* ✅ FOTO */
 async function handlePhoto(file){
   if(!file) return;
 
   showPreview(file);
   setStatus("Foto ricevuta, preparo…","warn");
 
-  const slim = await downscaleToJPEG(file);
+  const slim = await compressImage(file);
 
   await performUpload({
     fileOriginal:file,
@@ -286,7 +288,7 @@ async function handlePhoto(file){
   });
 }
 
-/* ✅ controllo durata video */
+/* ✅ VIDEO */
 function checkVideoDuration(file){
   return new Promise(resolve=>{
     const v=document.createElement("video");
@@ -299,11 +301,10 @@ function checkVideoDuration(file){
   });
 }
 
-/* ✅ gestione video */
 async function handleVideo(file){
   if(!file) return;
 
-  if(file.size > CONFIG.MAX_VIDEO_MB*1024*1024)
+  if(file.size > CONFIG.MAX_VIDEO_MB * 1024*1024)
     return setStatus(`Video troppo grande (> ${CONFIG.MAX_VIDEO_MB}MB)`,"err");
 
   showPreview(file);
