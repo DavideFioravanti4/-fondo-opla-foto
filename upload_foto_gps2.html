@@ -157,8 +157,8 @@
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/eaecce70bbda403caa744bf8a95ddece/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4xUPro1xqrxgwZVmuyha10sbdZaPj2q7otQs2ReQpWk",
 
-  MAX_VIDEO_MB:200,         // ✅ aumentato
-  MAX_VIDEO_SECONDS:180,    // ✅ aumentato
+  MAX_VIDEO_MB:200,         // aumentato
+  MAX_VIDEO_SECONDS:180,    // aumentato
   AUTO_REDIRECT_MS:900
 };
 
@@ -189,42 +189,25 @@ function showPreview(file){
   }
 }
 
-/* ✅ UPLOAD FOTO (campo dedicato) */
-async function uploadPhoto(file){
+/* ✅ FUNZIONE UNICA DI UPLOAD */
+async function performUpload(file, kind){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  fd.append("photo", file);   // ✅ fix definitivo
+  /* ✅ UNICA CHIAVE FILE, COME NEL FLOW ORIGINALE */
+  fd.append("file", file);   
+
+  /* ✅ SPECIFICHIAMO IL TIPO (foto o video) */
+  fd.append("kind", kind);
 
   fd.append("metadata", JSON.stringify({
-    type:"photo",
     uploadCode,
     proposalId: qs.proposalId || null
   }));
 
-  return send(fd);
-}
-
-/* ✅ UPLOAD VIDEO (campo dedicato) */
-async function uploadVideo(file){
-  const fd = new FormData();
-  const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
-
-  fd.append("video", file);   // ✅ distinto, non confonde foto/video
-
-  fd.append("metadata", JSON.stringify({
-    type:"video",
-    uploadCode,
-    proposalId: qs.proposalId || null
-  }));
-
-  return send(fd);
-}
-
-/* ✅ FUNZIONE DI INVIO COMUNE */
-async function send(fd){
   $('btnPhoto').disabled = true;
   $('btnVideo').disabled = true;
+  setStatus("Caricamento…","warn");
 
   try{
     const res = await fetch(CONFIG.FLOW_URL,{method:"POST",body:fd});
@@ -237,23 +220,23 @@ async function send(fd){
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
 
       setTimeout(()=>location.href =
-        `${qs.returnUrl}${sep}${key}` ,
+        `${qs.returnUrl}${sep}${key}=${uploadCode}`,
       CONFIG.AUTO_REDIRECT_MS);
     }
-
-  }catch(err){
+  }
+  catch(err){
     setStatus("Errore: "+err.message,"err");
-    $('btnPhoto').disabled=false;
-    $('btnVideo').disabled=false;
+    $('btnPhoto').disabled = false;
+    $('btnVideo').disabled = false;
   }
 }
 
 /* ✅ FOTO */
-async function handlePhoto(file){
+function handlePhoto(file){
   if(!file) return;
   showPreview(file);
   setStatus("Invio foto…","warn");
-  await uploadPhoto(file);
+  performUpload(file, "photo");
 }
 
 /* ✅ VIDEO */
@@ -284,8 +267,7 @@ async function handleVideo(file){
     return setStatus(`Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS}s)`,"err");
 
   setStatus("Invio video…","ok");
-
-  await uploadVideo(file);
+  performUpload(file, "video");
 }
 
 /* EVENTI */
