@@ -50,7 +50,7 @@
     /* ✅ BOLLINO 200x200 */
     .logo-img{
       display:block;
-      margin:4px auto 12px;
+      margin:6px auto 12px;
       width:120px;
       height:auto;
     }
@@ -112,7 +112,8 @@
       justify-content:center;
     }
 
-    .preview img, .preview video{
+    .preview img,
+    .preview video{
       max-width:100%;
       border-radius:10px;
       border:1px solid #e5e7eb;
@@ -133,10 +134,10 @@
 
 <main>
 
-  <!-- ✅ LOGO CORRETTO -->
+  <!-- ✅ LOGO BOLLINO -->
   <img
-    src="Fondo-Oplà-bollino-200x200.jpg"
-    alt="Fondo Oplà"
+    src="./Fono-Opla-bollino-200x200.jpg"
+    alt="Fondo Opla"
     class="logo-img"
   />
 
@@ -147,8 +148,8 @@
     <button id="btnVideo" class="btn-video">🎥 Aggiungi video</button>
   </div>
 
-  <input id="inputPhoto" type="file" accept="image/*" style="display:none"/>
-  <input id="inputVideo" type="file" accept="video/*" style="display:none"/>
+  <input id="inputPhoto" type="file" accept="image/*" hidden />
+  <input id="inputVideo" type="file" accept="video/*" hidden />
 
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
@@ -220,10 +221,9 @@ async function performUpload(file){
     if(qs.returnUrl){
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
-      setTimeout(() => location.href =
-        `${qs.returnUrl}${sep}${key}=${uploadCode}`,
-        CONFIG.AUTO_REDIRECT_MS
-      );
+      setTimeout(() => {
+        location.href = `${qs.returnUrl}${sep}${key}=${uploadCode}`;
+      }, CONFIG.AUTO_REDIRECT_MS);
     }
 
   } catch(err){
@@ -233,18 +233,18 @@ async function performUpload(file){
   }
 }
 
-$('btnPhoto').addEventListener('click', () => $('inputPhoto').click());
-$('btnVideo').addEventListener('click', () => $('inputVideo').click());
+$('btnPhoto').onclick = () => $('inputPhoto').click();
+$('btnVideo').onclick = () => $('inputVideo').click();
 
-$('inputPhoto').addEventListener('change', e =>{
+$('inputPhoto').onchange = e =>{
   if(e.target.files[0]) performUpload(e.target.files[0]);
   e.target.value='';
-});
+};
 
-$('inputVideo').addEventListener('change', e =>{
+$('inputVideo').onchange = e =>{
   if(e.target.files[0]) performUpload(e.target.files[0]);
   e.target.value='';
-});
+};
 </script>
 
 </body>
