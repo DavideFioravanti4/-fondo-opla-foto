@@ -14,7 +14,7 @@
     :root{
       --brand:#0b84f3;
       --warn:#b7791f;
-      --bg:#fad6d2; /* ✅ rosa stile Forms */
+      --bg:#fad6d2; /* rosa stile Forms */
     }
 
     html,body{
@@ -133,8 +133,12 @@
 
 <main>
 
-  <!-- ✅ NUOVO LOGO -->
-  <img src="Fondo-Oplà-bollino-200x200.jpg" class="logo-img"/>
+  <!-- ✅ LOGO CORRETTO -->
+  <img
+    src="Fondo-Oplà-bollino-200x200.jpg"
+    alt="Fondo Oplà"
+    class="logo-img"
+  />
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
@@ -210,6 +214,7 @@ async function performUpload(file){
     });
 
     if(!res.ok) throw new Error("HTTP " + res.status);
+
     setStatus("File caricato. Reindirizzo…","ok");
 
     if(qs.returnUrl){
