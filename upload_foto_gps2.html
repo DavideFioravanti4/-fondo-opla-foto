@@ -4,9 +4,9 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
 
   <title>Upload foto / video</title>
 
@@ -14,51 +14,51 @@
     :root{
       --brand:#0b84f3;
       --warn:#b7791f;
-      --bg:#eef4ff;
+      --bg:#fad6d2; /* ✅ rosa stile Forms */
     }
 
     html,body{
       margin:0;
       padding:0;
       font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-      background:var(--bg) url("sfondo.png") no-repeat center center fixed;
-      background-size:cover;
+      background:var(--bg);
       color:#111;
     }
 
     header{
       padding:14px;
-      background:linear-gradient(90deg, var(--brand), #6bb6ff);
-      color:#fff;
+      background:#ffffffcc;
+      color:#111;
       text-align:center;
       font-size:19px;
       font-weight:700;
+      backdrop-filter: blur(4px);
     }
 
     main{
       width:260px;
       max-width:92%;
-      margin:12px auto;
+      margin:14px auto;
       background:#fff;
       border:1px solid #e5e7eb;
-      border-radius:12px;
-      padding:8px 10px 14px;
-      box-shadow:0 2px 12px rgba(0,0,0,.10);
+      border-radius:14px;
+      padding:14px 12px 16px;
+      box-shadow:0 4px 20px rgba(0,0,0,.12);
       text-align:center;
     }
 
+    /* ✅ BOLLINO 200x200 */
     .logo-img{
       display:block;
-      margin:0 auto 18px;
-      width:85%;
-      max-width:420px;
+      margin:4px auto 12px;
+      width:120px;
       height:auto;
     }
 
     .intro{
       margin:0 0 10px;
       color:#444;
-      font-size:15px;
+      font-size:14px;
       font-weight:600;
     }
 
@@ -133,7 +133,8 @@
 
 <main>
 
-  <img src="LogoUltimaVersione.png" class="logo-img"/>
+  <!-- ✅ NUOVO LOGO -->
+  <img src="Fondo-Oplà-bollino-200x200.jpg" class="logo-img"/>
 
   <div class="intro">Fondo Oplà • Pagina caricata</div>
 
@@ -148,7 +149,7 @@
   <div id="status" class="status"></div>
   <div id="preview" class="preview"></div>
 
-  <div class="footer">v10.1</div>
+  <div class="footer">v10.2</div>
 
 </main>
 
@@ -156,7 +157,6 @@
 /* CONFIG */
 const CONFIG = {
   FLOW_URL:"https://defaultb87cc26609c440cc8dfac92e08bf9c.b4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e7ff1401ea244fffa736f80ab9cb6962/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=1eB-ol03eLjunbDTLsHaSc8ssu2IsIOId2p6TTliWJ4",
-
   MAX_VIDEO_MB:300,
   MAX_VIDEO_SECONDS:20,
   AUTO_REDIRECT_MS:900
@@ -177,27 +177,23 @@ function showPreview(file){
 
   if(file.type.startsWith("image/")){
     const img = new Image();
-    img.onload = ()=>URL.revokeObjectURL(url);
+    img.onload = () => URL.revokeObjectURL(url);
     img.src = url;
     p.appendChild(img);
   } else {
     const vid = document.createElement("video");
     vid.controls = true;
     vid.src = url;
-    vid.onloadeddata = ()=>URL.revokeObjectURL(url);
+    vid.onloadeddata = () => URL.revokeObjectURL(url);
     p.appendChild(vid);
   }
 }
 
-/* ✅ FUNZIONE DI UPLOAD CORRETTA — FILE PRIMA DI METADATA */
 async function performUpload(file){
   const fd = new FormData();
   const uploadCode = crypto?.randomUUID ? crypto.randomUUID() : Date.now();
 
-  /* ✅ IL FILE DEVE ESSERE IL PRIMO CAMPO */
   fd.append("file", file);
-
-  /* ✅ metadata DOPO il campo file */
   fd.append("metadata", JSON.stringify({
     uploadCode,
     proposalId: qs.proposalId || null
@@ -214,14 +210,12 @@ async function performUpload(file){
     });
 
     if(!res.ok) throw new Error("HTTP " + res.status);
-
     setStatus("File caricato. Reindirizzo…","ok");
 
     if(qs.returnUrl){
       const key="r2eaf878955164549a839a54cf37c9ea7";
       const sep = qs.returnUrl.includes("?") ? "&" : "?";
-
-      setTimeout(()=> location.href =
+      setTimeout(() => location.href =
         `${qs.returnUrl}${sep}${key}=${uploadCode}`,
         CONFIG.AUTO_REDIRECT_MS
       );
@@ -234,61 +228,16 @@ async function performUpload(file){
   }
 }
 
-/* ✅ FOTO */
-function handlePhoto(file){
-  if(!file) return;
-  showPreview(file);
-  setStatus("Invio foto…","warn");
-  performUpload(file);
-}
+$('btnPhoto').addEventListener('click', () => $('inputPhoto').click());
+$('btnVideo').addEventListener('click', () => $('inputVideo').click());
 
-/* ✅ VIDEO */
-function checkVideoDuration(file){
-  return new Promise(resolve=>{
-    const v=document.createElement("video");
-    v.preload="metadata";
-    v.src=URL.createObjectURL(file);
-    v.onloadedmetadata=()=>{
-      URL.revokeObjectURL(v.src);
-      resolve(v.duration);
-    };
-  });
-}
-
-async function handleVideo(file){
-  if(!file) return;
-
-  if(file.size > CONFIG.MAX_VIDEO_MB * 1024 * 1024)
-    return setStatus(
-      `Video troppo grande (> ${CONFIG.MAX_VIDEO_MB} MB)`,
-      "err"
-    );
-
-  showPreview(file);
-
-  const duration = await checkVideoDuration(file);
-
-  if(duration > CONFIG.MAX_VIDEO_SECONDS)
-    return setStatus(
-      `Video troppo lungo (max ${CONFIG.MAX_VIDEO_SECONDS} s)`,
-      "err"
-    );
-
-  setStatus("Invio video…","ok");
-  performUpload(file);
-}
-
-/* EVENTI */
-$('btnPhoto').addEventListener('click', ()=> $('inputPhoto').click());
-$('btnVideo').addEventListener('click', ()=> $('inputVideo').click());
-
-$('inputPhoto').addEventListener('change', e=>{
-  handlePhoto(e.target.files?.[0]);
+$('inputPhoto').addEventListener('change', e =>{
+  if(e.target.files[0]) performUpload(e.target.files[0]);
   e.target.value='';
 });
 
-$('inputVideo').addEventListener('change', e=>{
-  handleVideo(e.target.files?.[0]);
+$('inputVideo').addEventListener('change', e =>{
+  if(e.target.files[0]) performUpload(e.target.files[0]);
   e.target.value='';
 });
 </script>
